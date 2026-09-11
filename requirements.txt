@@ -1,0 +1,6 @@
+tensorflow==2.21.0
+gradio
+pandas
+numpy
+scikit-learn
+joblib

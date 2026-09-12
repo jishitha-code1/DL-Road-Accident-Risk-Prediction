@@ -70,15 +70,15 @@ st.markdown(
    ========================================================= */
 
 [data-testid="stSidebar"] {
-    background-color: #EDE8D0 !important;
+    background-color: #EED9C4 !important;
 }
 
 [data-testid="stSidebar"] > div {
-    background-color: #EDE8D0 !important;
+    background-color: #EED9C4 !important;
 }
 
 [data-testid="stSidebarContent"] {
-    background-color: #EDE8D0 !important;
+    background-color: #EED9C4 !important;
 }
 
 
@@ -201,7 +201,7 @@ div.stButton > button {
     width: 100%;
     height: 58px;
 
-    background-color: #EDE8D0 !important;
+    background-color: #EED9C4 !important;
     color: #173F68 !important;
 
     border: 1px solid #F09AAA !important;

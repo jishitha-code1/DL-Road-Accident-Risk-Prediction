@@ -16,7 +16,7 @@ from tensorflow.keras.models import load_model
 
 st.set_page_config(
     page_title="Road Accident Risk Prediction",
-    page_icon="🚗",
+    page_icon="🚦",
     layout="wide"
 )
 
@@ -442,7 +442,7 @@ def preprocess_input(
 with st.sidebar:
 
     st.markdown(
-        "## 🚗 Road Accident Risk"
+        "## 🚦 Road Accident Risk"
     )
 
     st.markdown(
@@ -484,7 +484,7 @@ with st.sidebar:
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">🚗 Road Accident Risk Prediction</div>',
+    '<div class="main-title">🚦 Road Accident Risk Prediction</div>',
     unsafe_allow_html=True
 )
 

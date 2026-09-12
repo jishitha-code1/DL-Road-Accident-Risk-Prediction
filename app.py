@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
@@ -23,7 +23,7 @@ st.set_page_config(
 
 
 # ============================================================
-# PROJECT PATHS
+# PATHS
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,13 +42,10 @@ st.markdown(
     """
     <style>
 
-    /* ======================================================
-       PAGE BACKGROUND
-       ====================================================== */
+    /* ---------- MAIN BACKGROUND ---------- */
 
     .stApp {
         background: #f8f1e3;
-        color: #17365d;
     }
 
     [data-testid="stAppViewContainer"] {
@@ -56,129 +53,91 @@ st.markdown(
     }
 
     [data-testid="stHeader"] {
-        background: rgba(248, 241, 227, 0.95);
+        background: #f8f1e3;
     }
 
 
-    /* ======================================================
-       SIDEBAR
-       ====================================================== */
+    /* ---------- SIDEBAR ---------- */
 
     [data-testid="stSidebar"] {
-        background: #eef4f8;
-        border-right: 1px solid #d6e0e7;
+        background: #eef5fa;
+        border-right: 1px solid #d5e1e9;
     }
 
 
-    /* ======================================================
-       HEADINGS
-       ====================================================== */
+    /* ---------- TEXT ---------- */
 
-    h1 {
-        color: #17365d !important;
-        font-weight: 750 !important;
+    h1, h2, h3 {
+        color: #173f68 !important;
     }
 
-    h2 {
-        color: #17365d !important;
-        font-weight: 700 !important;
-    }
-
-    h3 {
-        color: #214d78 !important;
-    }
-
-    p {
-        color: #294d70;
+    p, label {
+        color: #315878 !important;
     }
 
 
-    /* ======================================================
-       INPUT LABELS
-       ====================================================== */
-
-    [data-testid="stWidgetLabel"] p {
-        color: #17365d !important;
-        font-weight: 650 !important;
-    }
-
-
-    /* ======================================================
-       SELECT BOX
-       ====================================================== */
+    /* ---------- INPUTS ---------- */
 
     div[data-baseweb="select"] > div {
-        background: #fffdf8 !important;
-        border: 1px solid #c8d8e5 !important;
+        background: #fffdf9 !important;
+        border: 1px solid #cbd9e4 !important;
         border-radius: 10px !important;
     }
 
-
-    /* ======================================================
-       INPUT
-       ====================================================== */
-
     div[data-baseweb="input"] > div {
-        background: #fffdf8 !important;
-        border: 1px solid #c8d8e5 !important;
+        background: #fffdf9 !important;
+        border: 1px solid #cbd9e4 !important;
         border-radius: 10px !important;
     }
 
     input {
-        color: #17365d !important;
-        background: #fffdf8 !important;
+        background: #fffdf9 !important;
+        color: #173f68 !important;
     }
 
 
-    /* ======================================================
-       INPUT CARD
-       ====================================================== */
+    /* ---------- INPUT CARD ---------- */
 
     .input-card {
-        background: #fffdf8;
+        background: #fffdf9;
         border: 1px solid #dce5eb;
         border-radius: 18px;
-        padding: 25px 28px 22px 28px;
-        box-shadow: 0 6px 22px rgba(39, 70, 96, 0.08);
-        margin-top: 10px;
-        margin-bottom: 24px;
+        padding: 25px 28px;
+        margin-top: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 6px 20px rgba(40, 70, 95, 0.08);
     }
 
 
-    /* ======================================================
-       INFORMATION BAR
-       ====================================================== */
+    /* ---------- INFO BAR ---------- */
 
     .info-bar {
-        background: #f2f8fc;
-        border: 1px solid #cbdfee;
-        border-radius: 12px;
+        background: #f1f7fb;
+        border: 1px solid #cfdeea;
+        border-radius: 11px;
         padding: 13px 16px;
-        margin-top: 15px;
-        margin-bottom: 18px;
-        color: #214d78;
+        margin-top: 18px;
+        margin-bottom: 20px;
+        color: #315878;
         font-size: 14px;
-        font-weight: 550;
     }
 
 
-    /* ======================================================
-       PREDICT BUTTON
-       DOUBLE SHADE BLUE
-       ====================================================== */
+    /* ---------- PREDICT BUTTON ---------- */
 
     div.stButton > button {
         width: 100%;
-        min-height: 52px;
+        min-height: 54px;
 
-        background: linear-gradient(
-            90deg,
-            #4c9be8 0%,
-            #317dcc 48%,
-            #205b98 100%
-        ) !important;
+        background:
+            linear-gradient(
+                100deg,
+                #58a6eb 0%,
+                #337fc8 50%,
+                #205b96 100%
+            ) !important;
 
-        color: #ffffff !important;
+        color: white !important;
 
         border: none !important;
         border-radius: 11px !important;
@@ -187,91 +146,78 @@ st.markdown(
         font-weight: 700 !important;
 
         box-shadow:
-            0 5px 12px rgba(36, 103, 164, 0.25);
+            0 6px 15px rgba(36, 100, 160, 0.25);
 
-        transition:
-            transform 0.15s ease,
-            box-shadow 0.15s ease;
+        transition: all 0.2s ease;
     }
 
     div.stButton > button:hover {
-        background: linear-gradient(
-            90deg,
-            #3e8fdf 0%,
-            #286fb9 48%,
-            #174c83 100%
-        ) !important;
+        background:
+            linear-gradient(
+                100deg,
+                #4397df 0%,
+                #286fb7 50%,
+                #174d80 100%
+            ) !important;
 
-        color: #ffffff !important;
+        color: white !important;
 
         transform: translateY(-1px);
 
         box-shadow:
-            0 7px 16px rgba(36, 103, 164, 0.32);
+            0 8px 18px rgba(36, 100, 160, 0.32);
     }
 
 
-    /* ======================================================
-       RESULT CARD
-       ====================================================== */
+    /* ---------- RESULT CARD ---------- */
 
     .result-card {
-        background: #f5faff;
-        border: 1px solid #d5e3ed;
-        border-radius: 16px;
-        padding: 27px;
+        background: #f4f9fd;
+        border: 1px solid #d5e2eb;
+        border-radius: 17px;
+        padding: 28px;
         text-align: center;
-        box-shadow: 0 5px 18px rgba(39, 70, 96, 0.07);
         margin-top: 10px;
         margin-bottom: 25px;
+        box-shadow: 0 5px 18px rgba(40, 70, 95, 0.07);
     }
 
-    .result-label {
-        font-size: 16px;
-        color: #214d78;
+    .result-title {
+        font-size: 17px;
         font-weight: 650;
+        color: #315878;
         margin-bottom: 7px;
     }
 
-    .prediction-score {
-        font-size: 42px;
+    .score {
+        font-size: 43px;
         font-weight: 800;
-        color: #17365d;
-        margin: 3px 0 10px 0;
-    }
-
-    .prediction-category {
-        display: inline-block;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-size: 16px;
-        font-weight: 750;
+        color: #173f68;
+        margin: 5px 0 12px 0;
     }
 
 
-    /* ======================================================
-       SUMMARY CARD
-       ====================================================== */
+    /* ---------- SUMMARY ---------- */
 
     .summary-card {
-        background: #fffdf8;
+        background: #fffdf9;
         border: 1px solid #dce5eb;
-        border-radius: 15px;
-        padding: 20px 24px;
-        box-shadow: 0 4px 15px rgba(39, 70, 96, 0.06);
+        border-radius: 14px;
+        padding: 20px;
+        line-height: 1.9;
+        color: #315878;
+        box-shadow: 0 4px 14px rgba(40, 70, 95, 0.06);
     }
 
 
-    /* ======================================================
-       FOOTER
-       ====================================================== */
+    /* ---------- FOOTER ---------- */
 
     .footer {
         text-align: center;
-        color: #66809a;
+        color: #6b8398;
         font-size: 13px;
-        margin-top: 30px;
-        padding: 18px;
+        padding: 25px 10px 10px 10px;
+        margin-top: 25px;
     }
 
     </style>
@@ -281,7 +227,7 @@ st.markdown(
 
 
 # ============================================================
-# LOAD MODEL AND PREPROCESSING FILES
+# LOAD MODEL
 # ============================================================
 
 @st.cache_resource
@@ -304,7 +250,7 @@ def load_model_and_preprocessing():
 
 
 # ============================================================
-# FEATURE DEFINITIONS
+# FEATURES
 # ============================================================
 
 categorical_features = [
@@ -329,7 +275,7 @@ numerical_features = [
 
 
 # ============================================================
-# EXACT 35 FEATURE NAMES
+# 35 FEATURES
 # ============================================================
 
 feature_names = [
@@ -389,8 +335,7 @@ def get_risk_category(score):
     elif score < 0.60:
         return "Medium Risk"
 
-    else:
-        return "High Risk"
+    return "High Risk"
 
 
 # ============================================================
@@ -409,7 +354,7 @@ def calculate_peak_hour(hour):
 
 
 # ============================================================
-# PREPROCESS USER INPUT
+# PREPROCESS INPUT
 # ============================================================
 
 def preprocess_input(
@@ -437,11 +382,7 @@ def preprocess_input(
         "%H:%M"
     )
 
-    # --------------------------------------------
-    # CATEGORICAL DATA
-    # --------------------------------------------
-
-    input_df = pd.DataFrame({
+    categorical_df = pd.DataFrame({
         "city": [city],
         "road_type": [road_type],
         "weather": [weather],
@@ -451,16 +392,11 @@ def preprocess_input(
     })
 
     encoded = encoder.transform(
-        input_df
+        categorical_df
     )
 
     if hasattr(encoded, "toarray"):
         encoded = encoded.toarray()
-
-
-    # --------------------------------------------
-    # NUMERICAL DATA
-    # --------------------------------------------
 
     numerical_df = pd.DataFrame({
         "hour": [time_obj.hour],
@@ -477,37 +413,26 @@ def preprocess_input(
         numerical_df[numerical_features]
     )
 
-
-    # --------------------------------------------
-    # COMBINE
-    # --------------------------------------------
-
-    final_input = np.hstack([
-        encoded,
-        scaled
-    ])
+    final_input = np.hstack(
+        [encoded, scaled]
+    )
 
     final_input = final_input.astype(
         np.float32
     )
 
-
-    # --------------------------------------------
-    # VERIFY 35 FEATURES
-    # --------------------------------------------
-
     if final_input.shape[1] != 35:
 
         raise ValueError(
-            f"Expected 35 features, "
-            f"but received {final_input.shape[1]}."
+            f"Expected 35 features but got "
+            f"{final_input.shape[1]}"
         )
 
     return final_input
 
 
 # ============================================================
-# SAFE MODEL PREDICTION
+# MODEL PREDICTION
 # ============================================================
 
 def safe_predict(model, X):
@@ -522,21 +447,16 @@ def safe_predict(model, X):
         dtype=tf.float32
     )
 
-    prediction = model(
+    output = model(
         tensor_input,
         training=False
     )
 
-    return prediction.numpy().reshape(-1)
+    return output.numpy().reshape(-1)
 
 
 # ============================================================
-# SHAP EXPLAINER
-#
-# Uses a prediction function rather than passing the Keras
-# model directly to SHAP.
-#
-# This avoids the Keras input structure warning.
+# SHAP
 # ============================================================
 
 @st.cache_resource
@@ -554,272 +474,11 @@ def create_shap_explainer(model):
             X
         )
 
-    explainer = shap.Explainer(
+    return shap.Explainer(
         prediction_function,
         background,
         feature_names=feature_names
     )
-
-    return explainer
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-
-with st.sidebar:
-
-    st.markdown(
-        """
-        <div style="
-            padding:8px 0 18px 0;
-        ">
-
-            <div style="
-                font-size:25px;
-                font-weight:800;
-                color:#17365d;
-            ">
-                🚦 Road Accident Risk
-            </div>
-
-            <div style="
-                font-size:15px;
-                color:#52708d;
-                margin-top:4px;
-            ">
-                Deep Learning + Explainable AI
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    st.markdown(
-        """
-        <div style="
-            font-size:14px;
-            line-height:1.7;
-            color:#3d5d78;
-        ">
-            This application estimates road accident
-            risk based on the conditions entered by
-            the user.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    st.markdown(
-        "<hr>",
-        unsafe_allow_html=True
-    )
-
-
-    st.markdown(
-        """
-        <h3 style="
-            color:#17365d;
-            margin-bottom:20px;
-        ">
-            Risk Levels
-        </h3>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    # LOW RISK
-
-    st.markdown(
-        """
-        <div style="margin-bottom:22px;">
-
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:12px;
-            ">
-
-                <div style="
-                    width:28px;
-                    height:28px;
-                    border-radius:50%;
-                    background:#35b879;
-                ">
-                </div>
-
-                <div>
-
-                    <b style="color:#17365d;">
-                        Low Risk
-                    </b>
-
-                    <br>
-
-                    <span style="
-                        color:#5c7891;
-                        font-size:13px;
-                    ">
-                        Score &lt; 0.25
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    # MEDIUM RISK
-
-    st.markdown(
-        """
-        <div style="margin-bottom:22px;">
-
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:12px;
-            ">
-
-                <div style="
-                    width:28px;
-                    height:28px;
-                    border-radius:50%;
-                    background:#f5b82e;
-                ">
-                </div>
-
-                <div>
-
-                    <b style="color:#17365d;">
-                        Medium Risk
-                    </b>
-
-                    <br>
-
-                    <span style="
-                        color:#5c7891;
-                        font-size:13px;
-                    ">
-                        Score 0.25 – &lt; 0.60
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    # HIGH RISK
-
-    st.markdown(
-        """
-        <div style="margin-bottom:22px;">
-
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:12px;
-            ">
-
-                <div style="
-                    width:28px;
-                    height:28px;
-                    border-radius:50%;
-                    background:#ef4444;
-                ">
-                </div>
-
-                <div>
-
-                    <b style="color:#17365d;">
-                        High Risk
-                    </b>
-
-                    <br>
-
-                    <span style="
-                        color:#5c7891;
-                        font-size:13px;
-                    ">
-                        Score ≥ 0.60
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    st.markdown(
-        "<hr>",
-        unsafe_allow_html=True
-    )
-
-
-    st.markdown(
-        """
-        <div style="
-            color:#365b7d;
-            font-size:13px;
-            line-height:1.5;
-        ">
-            <b>
-                🧠 DL-Based Road Accident<br>
-                Risk Prediction
-            </b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# ============================================================
-# MAIN HEADER
-# ============================================================
-
-st.markdown(
-    """
-    <div style="
-        margin-top:5px;
-        margin-bottom:20px;
-    ">
-
-        <h1 style="
-            font-size:35px;
-            margin-bottom:4px;
-        ">
-            🚗 Road Accident Risk Prediction
-        </h1>
-
-        <div style="
-            font-size:17px;
-            color:#52708d;
-        ">
-            Deep Learning based risk estimation
-            with Explainable AI
-        </div>
-
-    </div>
-    """,
-    unsafe_allow_html=True
-)
 
 
 # ============================================================
@@ -835,86 +494,105 @@ try:
 except Exception as e:
 
     st.error(
-        "Unable to load the trained model or "
-        "preprocessing files."
+        "Unable to load the trained model."
     )
 
-    st.code(
-        str(e)
-    )
+    st.code(str(e))
 
     st.stop()
 
 
 # ============================================================
-# CURRENT DATE AND TIME
+# SIDEBAR
 # ============================================================
 
-now = datetime.now()
+with st.sidebar:
 
+    st.markdown(
+        """
+        <div style="
+            font-size:25px;
+            font-weight:800;
+            color:#173f68;
+            margin-bottom:5px;
+        ">
+            🚦 Road Accident Risk
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-# ============================================================
-# SESSION STATE
-# ============================================================
+    st.markdown(
+        """
+        <div style="
+            font-size:15px;
+            color:#52708d;
+            margin-bottom:20px;
+        ">
+            Deep Learning + Explainable AI
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-if "is_weekend" not in st.session_state:
+    st.write(
+        "This application estimates road accident "
+        "risk based on the conditions entered by "
+        "the user."
+    )
 
-    st.session_state.is_weekend = (
-        1
-        if now.weekday() >= 5
-        else 0
+    st.divider()
+
+    st.subheader("Risk Levels")
+
+    st.markdown(
+        """
+        🟢 **Low Risk**
+
+        Score < 0.25
+
+        🟡 **Medium Risk**
+
+        Score 0.25 – < 0.60
+
+        🔴 **High Risk**
+
+        Score ≥ 0.60
+        """
+    )
+
+    st.divider()
+
+    st.caption(
+        "DL-Based Road Accident Risk Prediction"
     )
 
 
-if "is_peak_hour" not in st.session_state:
-
-    st.session_state.is_peak_hour = (
-        calculate_peak_hour(
-            now.hour
-        )
-    )
-
-
-if "last_selected_date" not in st.session_state:
-
-    st.session_state.last_selected_date = (
-        now.date()
-    )
-
-
-if "last_selected_time" not in st.session_state:
-
-    st.session_state.last_selected_time = (
-        now.time().replace(
-            second=0,
-            microsecond=0
-        )
-    )
-
-
 # ============================================================
-# INPUT CARD
+# MAIN TITLE
 # ============================================================
 
-st.markdown(
-    """
-    <div class="input-card">
-    """,
-    unsafe_allow_html=True
+st.title(
+    "🚗 Road Accident Risk Prediction"
+)
+
+st.write(
+    "Deep Learning based risk estimation "
+    "with Explainable AI"
 )
 
 
+# ============================================================
+# INPUT SECTION
+# ============================================================
+
 st.markdown(
-    """
-    <h2 style="
-        font-size:21px;
-        margin-top:0;
-        margin-bottom:20px;
-    ">
-        Enter Road Conditions
-    </h2>
-    """,
+    '<div class="input-card">',
     unsafe_allow_html=True
+)
+
+st.subheader(
+    "Enter Road Conditions"
 )
 
 
@@ -1001,7 +679,7 @@ with col6:
 
     selected_date_obj = st.date_input(
         "Date",
-        value=now.date()
+        value=datetime.now().date()
     )
 
 
@@ -1016,7 +694,7 @@ with col7:
 
     selected_time_obj = st.time_input(
         "Time",
-        value=now.time().replace(
+        value=datetime.now().time().replace(
             second=0,
             microsecond=0
         )
@@ -1024,7 +702,7 @@ with col7:
 
 
 # ============================================================
-# AUTOMATIC WEEKEND
+# AUTOMATIC VALUES
 # ============================================================
 
 automatic_weekend = (
@@ -1033,79 +711,85 @@ automatic_weekend = (
     else 0
 )
 
-
-# ============================================================
-# AUTOMATIC PEAK HOUR
-# ============================================================
-
 automatic_peak_hour = calculate_peak_hour(
     selected_time_obj.hour
 )
 
 
 # ============================================================
-# DETECT DATE CHANGE
+# SESSION STATE
 # ============================================================
 
-date_changed = (
-    selected_date_obj
-    != st.session_state.last_selected_date
-)
+if "last_date" not in st.session_state:
 
+    st.session_state.last_date = (
+        selected_date_obj
+    )
 
-# ============================================================
-# DETECT TIME CHANGE
-# ============================================================
+if "last_time" not in st.session_state:
 
-time_changed = (
-    selected_time_obj
-    != st.session_state.last_selected_time
-)
+    st.session_state.last_time = (
+        selected_time_obj
+    )
 
-
-# ============================================================
-# UPDATE WEEKEND AUTOMATICALLY
-#
-# User can still manually override it afterwards.
-# ============================================================
-
-if date_changed:
+if "is_weekend" not in st.session_state:
 
     st.session_state.is_weekend = (
         automatic_weekend
     )
 
-    st.session_state.last_selected_date = (
-        selected_date_obj
-    )
-
-
-# ============================================================
-# UPDATE PEAK HOUR AUTOMATICALLY
-#
-# User can still manually override it afterwards.
-# ============================================================
-
-if time_changed:
+if "is_peak_hour" not in st.session_state:
 
     st.session_state.is_peak_hour = (
         automatic_peak_hour
     )
 
-    st.session_state.last_selected_time = (
+
+# ============================================================
+# DATE CHANGE → UPDATE WEEKEND
+# ============================================================
+
+if (
+    selected_date_obj
+    != st.session_state.last_date
+):
+
+    st.session_state.is_weekend = (
+        automatic_weekend
+    )
+
+    st.session_state.last_date = (
+        selected_date_obj
+    )
+
+
+# ============================================================
+# TIME CHANGE → UPDATE PEAK HOUR
+# ============================================================
+
+if (
+    selected_time_obj
+    != st.session_state.last_time
+):
+
+    st.session_state.is_peak_hour = (
+        automatic_peak_hour
+    )
+
+    st.session_state.last_time = (
         selected_time_obj
     )
 
 
 # ============================================================
-# WEEKEND RADIO
+# WEEKEND
 # ============================================================
 
 with col8:
 
     is_weekend = st.radio(
         "Is Weekend",
-        options=[0, 1],
+        [0, 1],
         format_func=lambda x:
             "Yes" if x == 1 else "No",
         horizontal=True,
@@ -1114,14 +798,14 @@ with col8:
 
 
 # ============================================================
-# PEAK HOUR RADIO
+# PEAK HOUR
 # ============================================================
 
 with col9:
 
     is_peak_hour = st.radio(
         "Is Peak Hour",
-        options=[0, 1],
+        [0, 1],
         format_func=lambda x:
             "Yes" if x == 1 else "No",
         horizontal=True,
@@ -1130,34 +814,27 @@ with col9:
 
 
 # ============================================================
-# DAY OF WEEK
+# DERIVED VALUES
 # ============================================================
 
 day_of_week = selected_date_obj.strftime(
     "%A"
 )
 
-
 selected_date = selected_date_obj.strftime(
     "%Y-%m-%d"
 )
-
 
 selected_time = selected_time_obj.strftime(
     "%H:%M"
 )
 
 
-# ============================================================
-# DISPLAY INFORMATION BAR
-# ============================================================
-
 weekend_text = (
     "Yes"
     if is_weekend == 1
     else "No"
 )
-
 
 peak_text = (
     "Yes"
@@ -1166,41 +843,16 @@ peak_text = (
 )
 
 
-st.markdown(
-    f"""
-    <div class="info-bar">
+# ============================================================
+# INFO BAR
+# ============================================================
 
-        📅 &nbsp;
-        <b>Selected Date:</b>
-        {selected_date}
-
-        &nbsp;&nbsp; | &nbsp;&nbsp;
-
-        📆 &nbsp;
-        <b>Day:</b>
-        {day_of_week}
-
-        &nbsp;&nbsp; | &nbsp;&nbsp;
-
-        🕐 &nbsp;
-        <b>Selected Time:</b>
-        {selected_time}
-
-        &nbsp;&nbsp; | &nbsp;&nbsp;
-
-        ☀️ &nbsp;
-        <b>Weekend:</b>
-        {weekend_text}
-
-        &nbsp;&nbsp; | &nbsp;&nbsp;
-
-        📈 &nbsp;
-        <b>Peak Hour:</b>
-        {peak_text}
-
-    </div>
-    """,
-    unsafe_allow_html=True
+st.info(
+    f"📅 {selected_date}  |  "
+    f"📆 {day_of_week}  |  "
+    f"🕐 {selected_time}  |  "
+    f"Weekend: {weekend_text}  |  "
+    f"Peak Hour: {peak_text}"
 )
 
 
@@ -1221,16 +873,16 @@ st.markdown(
 
 
 # ============================================================
-# PREDICTION
+# PREDICTION SECTION
 # ============================================================
 
 if predict_clicked:
 
     try:
 
-        # ====================================================
+        # ----------------------------------------------------
         # PREPROCESS
-        # ====================================================
+        # ----------------------------------------------------
 
         final_input = preprocess_input(
 
@@ -1260,22 +912,18 @@ if predict_clicked:
         )
 
 
-        # ====================================================
-        # MODEL PREDICTION
-        # ====================================================
+        # ----------------------------------------------------
+        # PREDICT
+        # ----------------------------------------------------
 
         prediction = safe_predict(
             model,
             final_input
         )
 
-
         risk_score = float(
             prediction[0]
         )
-
-
-        # Keep score between 0 and 1
 
         risk_score = float(
             np.clip(
@@ -1286,9 +934,9 @@ if predict_clicked:
         )
 
 
-        # ====================================================
-        # RISK CATEGORY
-        # ====================================================
+        # ----------------------------------------------------
+        # CATEGORY
+        # ----------------------------------------------------
 
         risk_category = get_risk_category(
             risk_score
@@ -1296,66 +944,51 @@ if predict_clicked:
 
 
         # ====================================================
-        # CATEGORY COLORS
+        # RESULT
         # ====================================================
 
-        if risk_category == "Low Risk":
-
-            category_background = "#d9f6e6"
-            category_text = "#16834a"
-
-        elif risk_category == "Medium Risk":
-
-            category_background = "#fff0c7"
-            category_text = "#a76b00"
-
-        else:
-
-            category_background = "#ffe0e0"
-            category_text = "#c62828"
-
-
-        # ====================================================
-        # RESULT TITLE
-        # ====================================================
-
-        st.markdown(
-            """
-            <h2 style="
-                margin-top:25px;
-                margin-bottom:12px;
-                font-size:23px;
-            ">
-                Prediction Result
-            </h2>
-            """,
-            unsafe_allow_html=True
+        st.subheader(
+            "Prediction Result"
         )
 
 
-        # ====================================================
-        # RESULT CARD
-        # ====================================================
+        if risk_category == "Low Risk":
+
+            bg = "#dff5e8"
+            text = "#16834a"
+
+        elif risk_category == "Medium Risk":
+
+            bg = "#fff1c9"
+            text = "#9a6900"
+
+        else:
+
+            bg = "#ffe1e1"
+            text = "#c62828"
+
 
         st.markdown(
             f"""
             <div class="result-card">
 
-                <div class="result-label">
+                <div class="result-title">
                     Predicted Risk Score
                 </div>
 
-                <div class="prediction-score">
+                <div class="score">
                     {risk_score:.4f}
                 </div>
 
-                <div
-                    class="prediction-category"
-                    style="
-                        background:{category_background};
-                        color:{category_text};
-                    "
-                >
+                <div style="
+                    display:inline-block;
+                    background:{bg};
+                    color:{text};
+                    padding:9px 22px;
+                    border-radius:25px;
+                    font-size:16px;
+                    font-weight:750;
+                ">
                     {risk_category}
                 </div>
 
@@ -1369,48 +1002,56 @@ if predict_clicked:
         # INPUT SUMMARY
         # ====================================================
 
-        st.markdown(
-            """
-            <h2 style="
-                font-size:21px;
-                margin-top:25px;
-            ">
-                Input Summary
-            </h2>
-            """,
-            unsafe_allow_html=True
+        st.subheader(
+            "Input Summary"
         )
 
 
-        summary_col1, summary_col2 = st.columns(2)
+        summary1, summary2 = st.columns(2)
 
 
-        # ====================================================
-        # LOCATION / ROAD SUMMARY
-        # ====================================================
-
-        with summary_col1:
+        with summary1:
 
             st.markdown(
                 f"""
                 <div class="summary-card">
 
-                    <b>Location & Road</b>
+                <b>Location & Road</b><br><br>
 
-                    <br><br>
+                🌆 City:
+                <b>{city}</b><br>
 
-                    📍 City:
-                    <b>{city}</b>
+                🛣️ Road Type:
+                <b>{road_type}</b><br>
 
-                    <br>
+                🚗 Traffic Density:
+                <b>{traffic_density}</b>
 
-                    🛣️ Road Type:
-                    <b>{road_type}</b>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-                    <br>
 
-                    🚗 Traffic Density:
-                    <b>{traffic_density}</b>
+        with summary2:
+
+            st.markdown(
+                f"""
+                <div class="summary-card">
+
+                <b>Environment & Time</b><br><br>
+
+                🌦️ Weather:
+                <b>{weather}</b><br>
+
+                👁️ Visibility:
+                <b>{visibility}</b><br>
+
+                📅 Day:
+                <b>{day_of_week}</b><br>
+
+                🕐 Time:
+                <b>{selected_time}</b>
 
                 </div>
                 """,
@@ -1419,69 +1060,18 @@ if predict_clicked:
 
 
         # ====================================================
-        # ENVIRONMENT / TIME SUMMARY
+        # SHAP
         # ====================================================
 
-        with summary_col2:
-
-            st.markdown(
-                f"""
-                <div class="summary-card">
-
-                    <b>Environment & Time</b>
-
-                    <br><br>
-
-                    🌦️ Weather:
-                    <b>{weather}</b>
-
-                    <br>
-
-                    👁️ Visibility:
-                    <b>{visibility}</b>
-
-                    <br>
-
-                    📅 {day_of_week},
-                    {selected_date}
-
-                    <br>
-
-                    🕐 Time:
-                    <b>{selected_time}</b>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-
-        # ====================================================
-        # SHAP SECTION
-        # ====================================================
-
-        st.markdown(
-            """
-            <h2 style="
-                font-size:21px;
-                margin-top:30px;
-            ">
-                Explainable AI — SHAP
-            </h2>
-            """,
-            unsafe_allow_html=True
+        st.subheader(
+            "Explainable AI — SHAP"
         )
-
 
         st.write(
-            "SHAP shows which input features contributed "
-            "most to the model's prediction."
+            "SHAP explains which features contributed "
+            "most to the predicted risk."
         )
 
-
-        # ====================================================
-        # GENERATE SHAP
-        # ====================================================
 
         with st.spinner(
             "Generating explanation..."
@@ -1489,8 +1079,10 @@ if predict_clicked:
 
             try:
 
-                explainer = create_shap_explainer(
-                    model
+                explainer = (
+                    create_shap_explainer(
+                        model
+                    )
                 )
 
 
@@ -1499,12 +1091,14 @@ if predict_clicked:
                 )
 
 
-                shap_values = shap_result.values
+                shap_values = (
+                    shap_result.values
+                )
 
 
-                # --------------------------------------------
-                # HANDLE SHAP DIMENSIONS
-                # --------------------------------------------
+                # ------------------------------------------------
+                # SHAP DIMENSION
+                # ------------------------------------------------
 
                 if shap_values.ndim == 3:
 
@@ -1520,21 +1114,15 @@ if predict_clicked:
                 )
 
 
-                # --------------------------------------------
-                # ABSOLUTE SHAP VALUES
-                # --------------------------------------------
-
-                absolute_values = np.abs(
-                    shap_values[0]
-                )
+                values = shap_values[0]
 
 
-                # --------------------------------------------
-                # TOP 10 FEATURES
-                # --------------------------------------------
+                # ------------------------------------------------
+                # TOP FEATURES
+                # ------------------------------------------------
 
                 top_indices = np.argsort(
-                    absolute_values
+                    np.abs(values)
                 )[-10:][::-1]
 
 
@@ -1545,13 +1133,13 @@ if predict_clicked:
 
 
                 top_values = [
-                    shap_values[0][i]
+                    values[i]
                     for i in top_indices
                 ]
 
 
                 # =================================================
-                # SHAP CHART
+                # CHART
                 # =================================================
 
                 fig, ax = plt.subplots(
@@ -1575,7 +1163,6 @@ if predict_clicked:
                     "SHAP Value"
                 )
 
-
                 ax.set_title(
                     "Top 10 Features Affecting Prediction"
                 )
@@ -1594,7 +1181,7 @@ if predict_clicked:
 
 
                 # =================================================
-                # SHAP TABLE
+                # TABLE
                 # =================================================
 
                 shap_table = pd.DataFrame({
@@ -1603,20 +1190,21 @@ if predict_clicked:
 
                     "SHAP Value": [
                         round(
-                            float(value),
+                            float(v),
                             5
                         )
-                        for value in top_values
+                        for v in top_values
                     ],
 
                     "Impact": [
 
                         "Increases Risk"
-                        if value > 0
+                        if v > 0
                         else "Decreases Risk"
 
-                        for value in top_values
+                        for v in top_values
                     ]
+
                 })
 
 
@@ -1630,8 +1218,8 @@ if predict_clicked:
             except Exception as shap_error:
 
                 st.warning(
-                    "Prediction was successful, but "
-                    "the SHAP explanation could not "
+                    "Prediction succeeded, but "
+                    "SHAP explanation could not "
                     "be generated."
                 )
 
@@ -1644,34 +1232,16 @@ if predict_clicked:
         # DISCLAIMER
         # ====================================================
 
-        st.markdown(
-            """
-            <div style="
-                background:#fff8e8;
-                border:1px solid #ead9ae;
-                border-radius:12px;
-                padding:15px 18px;
-                margin-top:25px;
-                color:#66552f;
-                font-size:13px;
-                line-height:1.6;
-            ">
-
-                <b>Note:</b>
-                The predicted score is an estimated risk
-                based on the conditions entered into the
-                model. It does not guarantee that an
-                accident will occur.
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.warning(
+            "The predicted score is an estimated risk "
+            "based on the conditions entered into the "
+            "model. It does not guarantee that an accident "
+            "will occur."
         )
 
 
     # ========================================================
-    # IMPORTANT:
-    # THIS EXCEPT MATCHES THE OUTER PREDICTION TRY BLOCK
+    # OUTER PREDICTION ERROR
     # ========================================================
 
     except Exception as e:
@@ -1692,11 +1262,9 @@ if predict_clicked:
 st.markdown(
     """
     <div class="footer">
-
         DL-Based Road Accident Risk Prediction
         &nbsp; • &nbsp;
         Deep Learning + Explainable AI
-
     </div>
     """,
     unsafe_allow_html=True

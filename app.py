@@ -23,7 +23,7 @@ st.set_page_config(
 
 
 # ============================================================
-# PATHS
+# FILE PATHS
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,9 +42,9 @@ st.markdown(
     """
     <style>
 
-    /* ========================================================
-       MAIN APPLICATION BACKGROUND
-       ======================================================== */
+    /* ======================================================
+       MAIN PAGE
+       ====================================================== */
 
     .stApp {
         background-color: #ADD8E6 !important;
@@ -63,13 +63,16 @@ st.markdown(
     }
 
 
-    /* ========================================================
+    /* ======================================================
        SIDEBAR
-       ======================================================== */
+       ====================================================== */
 
     [data-testid="stSidebar"] {
         background-color: #ADD8E6 !important;
-        border-right: 1px solid #8fc5d8;
+    }
+
+    [data-testid="stSidebar"] > div {
+        background-color: #ADD8E6 !important;
     }
 
     [data-testid="stSidebarContent"] {
@@ -77,46 +80,42 @@ st.markdown(
     }
 
 
-    /* ========================================================
+    /* ======================================================
        HEADINGS
-       ======================================================== */
+       ====================================================== */
 
-    h1,
-    h2,
-    h3,
-    h4 {
+    h1, h2, h3, h4 {
         color: #173F68 !important;
     }
 
 
-    /* ========================================================
+    /* ======================================================
        NORMAL TEXT
-       ======================================================== */
+       ====================================================== */
 
-    p,
-    label {
+    p {
         color: #315878;
     }
 
 
-    /* ========================================================
+    /* ======================================================
        INPUT CARD
-       ======================================================== */
+       ====================================================== */
 
     .input-card {
         background-color: #FFFDF9;
-        border: 1px solid #D4E1E8;
+        border: 1px solid #D5E1E8;
         border-radius: 18px;
-        padding: 26px 28px 28px 28px;
-        margin-top: 18px;
-        margin-bottom: 22px;
-        box-shadow: 0 6px 20px rgba(35, 75, 100, 0.10);
+        padding: 28px;
+        margin-top: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 7px 22px rgba(35, 75, 100, 0.10);
     }
 
 
-    /* ========================================================
-       SELECT BOX
-       ======================================================== */
+    /* ======================================================
+       SELECT BOXES
+       ====================================================== */
 
     div[data-baseweb="select"] > div {
         background-color: #FFFDF9 !important;
@@ -125,9 +124,9 @@ st.markdown(
     }
 
 
-    /* ========================================================
-       DATE / TIME INPUT
-       ======================================================== */
+    /* ======================================================
+       DATE AND TIME
+       ====================================================== */
 
     div[data-baseweb="input"] > div {
         background-color: #FFFDF9 !important;
@@ -141,79 +140,78 @@ st.markdown(
     }
 
 
-    /* ========================================================
-       RADIO BUTTON TEXT
-       ======================================================== */
+    /* ======================================================
+       RADIO BUTTON
+       ====================================================== */
 
     div[data-testid="stRadio"] label {
         color: #315878 !important;
     }
 
 
-    /* ========================================================
+    /* ======================================================
        PREDICT BUTTON
-       ======================================================== */
+       ====================================================== */
 
     div.stButton > button {
+
         width: 100%;
         min-height: 54px;
 
         background-color: #FFC0CB !important;
-        background-image: none !important;
-
         color: #173F68 !important;
 
-        border: 1px solid #E59AA8 !important;
+        border: 1px solid #E39AA9 !important;
         border-radius: 12px !important;
 
-        font-size: 16px !important;
+        font-size: 17px !important;
         font-weight: 750 !important;
 
-        box-shadow: 0 6px 15px rgba(150, 90, 105, 0.18);
+        box-shadow:
+            0 6px 15px rgba(145, 80, 95, 0.18);
 
         transition: all 0.2s ease;
     }
 
 
     div.stButton > button:hover {
-        background-color: #F5AAB8 !important;
+
+        background-color: #F5A9B8 !important;
         color: #173F68 !important;
 
-        border: 1px solid #D98C9B !important;
+        border: 1px solid #D88C9B !important;
 
         transform: translateY(-1px);
 
-        box-shadow: 0 8px 18px rgba(150, 90, 105, 0.25);
+        box-shadow:
+            0 8px 20px rgba(145, 80, 95, 0.25);
     }
 
 
-    /* ========================================================
-       INFO BOX
-       ======================================================== */
+    div.stButton > button:active {
 
-    div[data-testid="stAlert"] {
-        border-radius: 12px;
+        background-color: #EFA0B0 !important;
+        color: #173F68 !important;
     }
 
 
-    /* ========================================================
+    /* ======================================================
+       DIVIDER
+       ====================================================== */
+
+    hr {
+        border-color: #9CC9D9 !important;
+    }
+
+
+    /* ======================================================
        DATAFRAME
-       ======================================================== */
+       ====================================================== */
 
     div[data-testid="stDataFrame"] {
         border-radius: 12px;
         overflow: hidden;
     }
-
-
-    /* ========================================================
-       DIVIDER
-       ======================================================== */
-
-    hr {
-        border-color: #9BC8D8 !important;
-    }
-
 
     </style>
     """,
@@ -222,7 +220,7 @@ st.markdown(
 
 
 # ============================================================
-# LOAD MODEL AND PREPROCESSING
+# LOAD MODEL
 # ============================================================
 
 @st.cache_resource
@@ -245,7 +243,7 @@ def load_model_and_preprocessing():
 
 
 # ============================================================
-# FEATURE DEFINITIONS
+# FEATURE LISTS
 # ============================================================
 
 categorical_features = [
@@ -271,10 +269,11 @@ numerical_features = [
 
 
 # ============================================================
-# 35 MODEL FEATURES
+# 35 FEATURE NAMES
 # ============================================================
 
 feature_names = [
+
     "city_Bangalore",
     "city_Chandigarh",
     "city_Chennai",
@@ -336,7 +335,7 @@ def get_risk_category(score):
 
 
 # ============================================================
-# PEAK HOUR CALCULATION
+# PEAK HOUR
 # ============================================================
 
 def calculate_peak_hour(hour):
@@ -351,7 +350,7 @@ def calculate_peak_hour(hour):
 
 
 # ============================================================
-# PREPROCESS USER INPUT
+# PREPROCESS INPUT
 # ============================================================
 
 def preprocess_input(
@@ -390,7 +389,7 @@ def preprocess_input(
 
 
     # --------------------------------------------------------
-    # CATEGORICAL DATA
+    # CATEGORICAL FEATURES
     # --------------------------------------------------------
 
     categorical_df = pd.DataFrame({
@@ -420,7 +419,7 @@ def preprocess_input(
 
 
     # --------------------------------------------------------
-    # NUMERICAL DATA
+    # NUMERICAL FEATURES
     # --------------------------------------------------------
 
     numerical_df = pd.DataFrame({
@@ -450,7 +449,7 @@ def preprocess_input(
 
 
     # --------------------------------------------------------
-    # FINAL 35 FEATURES
+    # COMBINE
     # --------------------------------------------------------
 
     final_input = np.hstack(
@@ -464,13 +463,13 @@ def preprocess_input(
 
 
     # --------------------------------------------------------
-    # FEATURE COUNT CHECK
+    # CHECK FEATURE COUNT
     # --------------------------------------------------------
 
     if final_input.shape[1] != 35:
 
         raise ValueError(
-            f"Expected 35 features but got "
+            f"Expected 35 features but received "
             f"{final_input.shape[1]}"
         )
 
@@ -557,7 +556,7 @@ with st.sidebar:
             font-size:25px;
             font-weight:800;
             color:#173F68;
-            margin-bottom:7px;
+            margin-bottom:8px;
         ">
             🚦 Road Accident Risk
         </div>
@@ -580,7 +579,7 @@ with st.sidebar:
             font-size:15px;
             line-height:1.65;
             color:#315878;
-            margin-bottom:20px;
+            margin-bottom:22px;
         ">
             This application estimates road accident
             risk based on the conditions entered by
@@ -593,13 +592,18 @@ with st.sidebar:
     st.divider()
 
 
+    # --------------------------------------------------------
+    # RISK LEVELS TITLE
+    # --------------------------------------------------------
+
     st.html(
         """
         <div style="
             font-size:20px;
             font-weight:750;
             color:#173F68;
-            margin:10px 0 20px 0;
+            margin-top:10px;
+            margin-bottom:22px;
         ">
             Risk Levels
         </div>
@@ -607,13 +611,14 @@ with st.sidebar:
     )
 
 
+    # --------------------------------------------------------
     # LOW RISK
+    # --------------------------------------------------------
 
     st.html(
         """
         <div style="
             margin-bottom:22px;
-            color:#315878;
         ">
 
             <div style="
@@ -621,6 +626,7 @@ with st.sidebar:
                 font-weight:700;
                 color:#315878;
             ">
+
                 <span style="
                     display:inline-block;
                     width:17px;
@@ -630,11 +636,13 @@ with st.sidebar:
                     margin-right:9px;
                     vertical-align:-2px;
                 "></span>
+
                 Low Risk
+
             </div>
 
             <div style="
-                margin-top:10px;
+                margin-top:9px;
                 font-size:14px;
                 color:#315878;
             ">
@@ -646,13 +654,14 @@ with st.sidebar:
     )
 
 
+    # --------------------------------------------------------
     # MEDIUM RISK
+    # --------------------------------------------------------
 
     st.html(
         """
         <div style="
             margin-bottom:22px;
-            color:#315878;
         ">
 
             <div style="
@@ -660,6 +669,7 @@ with st.sidebar:
                 font-weight:700;
                 color:#315878;
             ">
+
                 <span style="
                     display:inline-block;
                     width:17px;
@@ -669,11 +679,13 @@ with st.sidebar:
                     margin-right:9px;
                     vertical-align:-2px;
                 "></span>
+
                 Medium Risk
+
             </div>
 
             <div style="
-                margin-top:10px;
+                margin-top:9px;
                 font-size:14px;
                 color:#315878;
             ">
@@ -685,13 +697,14 @@ with st.sidebar:
     )
 
 
+    # --------------------------------------------------------
     # HIGH RISK
+    # --------------------------------------------------------
 
     st.html(
         """
         <div style="
             margin-bottom:22px;
-            color:#315878;
         ">
 
             <div style="
@@ -699,6 +712,7 @@ with st.sidebar:
                 font-weight:700;
                 color:#315878;
             ">
+
                 <span style="
                     display:inline-block;
                     width:17px;
@@ -708,11 +722,13 @@ with st.sidebar:
                     margin-right:9px;
                     vertical-align:-2px;
                 "></span>
+
                 High Risk
+
             </div>
 
             <div style="
-                margin-top:10px;
+                margin-top:9px;
                 font-size:14px;
                 color:#315878;
             ">
@@ -747,7 +763,7 @@ with st.sidebar:
 st.html(
     """
     <div style="
-        padding:15px 0 5px 0;
+        padding:20px 0 5px 0;
     ">
 
         <div style="
@@ -774,18 +790,19 @@ st.html(
 
 
 # ============================================================
-# SMALL SPACER CARD
+# SPACER
 # ============================================================
 
 st.html(
     """
     <div style="
-        height:32px;
+        height:30px;
         background:#FFFDF9;
-        border:1px solid #D4E1E8;
+        border:1px solid #D5E1E8;
         border-radius:18px;
-        margin:35px 0 25px 0;
-        box-shadow:0 5px 18px rgba(35,75,100,0.08);
+        margin:34px 0 28px 0;
+        box-shadow:
+            0 5px 18px rgba(35,75,100,0.08);
     ">
     </div>
     """
@@ -793,13 +810,13 @@ st.html(
 
 
 # ============================================================
-# INPUT SECTION
+# INPUT SECTION TITLE
 # ============================================================
 
 st.html(
     """
     <div style="
-        font-size:27px;
+        font-size:28px;
         font-weight:800;
         color:#173F68;
         margin-bottom:18px;
@@ -809,6 +826,10 @@ st.html(
     """
 )
 
+
+# ============================================================
+# INPUT CARD START
+# ============================================================
 
 st.markdown(
     '<div class="input-card">',
@@ -922,7 +943,7 @@ with col7:
 
 
 # ============================================================
-# AUTOMATIC VALUES
+# AUTOMATIC WEEKEND
 # ============================================================
 
 automatic_weekend = (
@@ -932,13 +953,17 @@ automatic_weekend = (
 )
 
 
+# ============================================================
+# AUTOMATIC PEAK HOUR
+# ============================================================
+
 automatic_peak_hour = calculate_peak_hour(
     selected_time_obj.hour
 )
 
 
 # ============================================================
-# SESSION STATE INITIALIZATION
+# SESSION STATE
 # ============================================================
 
 if "last_selected_date" not in st.session_state:
@@ -970,7 +995,7 @@ if "is_peak_hour" not in st.session_state:
 
 
 # ============================================================
-# DATE CHANGE → UPDATE WEEKEND
+# UPDATE WEEKEND WHEN DATE CHANGES
 # ============================================================
 
 if (
@@ -988,7 +1013,7 @@ if (
 
 
 # ============================================================
-# TIME CHANGE → UPDATE PEAK HOUR
+# UPDATE PEAK HOUR WHEN TIME CHANGES
 # ============================================================
 
 if (
@@ -1071,7 +1096,7 @@ peak_text = (
 
 
 # ============================================================
-# DATE/TIME INFORMATION
+# DATE/TIME SUMMARY
 # ============================================================
 
 st.html(
@@ -1081,22 +1106,26 @@ st.html(
         border:1px solid #D0E2E9;
         border-radius:10px;
         padding:13px 17px;
-        margin-top:10px;
-        margin-bottom:20px;
+        margin-top:12px;
+        margin-bottom:22px;
         font-size:15px;
         color:#315878;
     ">
 
         📅 {selected_date}
+
         &nbsp; | &nbsp;
 
         📆 {day_of_week}
+
         &nbsp; | &nbsp;
 
         🕐 {selected_time}
+
         &nbsp; | &nbsp;
 
         Weekend: <b>{weekend_text}</b>
+
         &nbsp; | &nbsp;
 
         Peak Hour: <b>{peak_text}</b>
@@ -1111,10 +1140,14 @@ st.html(
 # ============================================================
 
 predict_clicked = st.button(
-    "🚦  Predict Accident Risk",
+    "🚗  Predict Accident Risk",
     use_container_width=True
 )
 
+
+# ============================================================
+# INPUT CARD END
+# ============================================================
 
 st.markdown(
     "</div>",
@@ -1131,7 +1164,7 @@ if predict_clicked:
     try:
 
         # ----------------------------------------------------
-        # PREPROCESS INPUT
+        # PREPROCESS
         # ----------------------------------------------------
 
         final_input = preprocess_input(
@@ -1159,7 +1192,6 @@ if predict_clicked:
             encoder=encoder,
 
             scaler=scaler
-
         )
 
 
@@ -1188,7 +1220,7 @@ if predict_clicked:
 
 
         # ----------------------------------------------------
-        # RISK CATEGORY
+        # CATEGORY
         # ----------------------------------------------------
 
         risk_category = get_risk_category(
@@ -1215,9 +1247,9 @@ if predict_clicked:
         )
 
 
-        # ----------------------------------------------------
-        # CATEGORY COLORS
-        # ----------------------------------------------------
+        # ====================================================
+        # RESULT COLORS
+        # ====================================================
 
         if risk_category == "Low Risk":
 
@@ -1243,7 +1275,9 @@ if predict_clicked:
             f"""
             <div style="
                 background:#F4F9FD;
+
                 border:1px solid #D1E0E9;
+
                 border-radius:18px;
 
                 padding:32px;
@@ -1254,7 +1288,8 @@ if predict_clicked:
                 margin-bottom:28px;
 
                 box-shadow:
-                    0 7px 22px rgba(35,75,100,0.10);
+                    0 7px 22px
+                    rgba(35,75,100,0.10);
             ">
 
                 <div style="
@@ -1281,6 +1316,7 @@ if predict_clicked:
                     display:inline-block;
 
                     background:{result_bg};
+
                     color:{result_text};
 
                     padding:10px 25px;
@@ -1288,6 +1324,7 @@ if predict_clicked:
                     border-radius:25px;
 
                     font-size:17px;
+
                     font-weight:750;
                 ">
                     {risk_category}
@@ -1321,7 +1358,7 @@ if predict_clicked:
 
 
         # ----------------------------------------------------
-        # SUMMARY 1
+        # LOCATION & ROAD
         # ----------------------------------------------------
 
         with summary1:
@@ -1344,7 +1381,8 @@ if predict_clicked:
                     min-height:175px;
 
                     box-shadow:
-                        0 4px 14px rgba(35,75,100,0.06);
+                        0 4px 14px
+                        rgba(35,75,100,0.06);
                 ">
 
                     <div style="
@@ -1358,10 +1396,12 @@ if predict_clicked:
 
                     🌆 City:
                     <b>{city}</b>
+
                     <br>
 
                     🛣️ Road Type:
                     <b>{road_type}</b>
+
                     <br>
 
                     🚗 Traffic Density:
@@ -1373,7 +1413,7 @@ if predict_clicked:
 
 
         # ----------------------------------------------------
-        # SUMMARY 2
+        # ENVIRONMENT & TIME
         # ----------------------------------------------------
 
         with summary2:
@@ -1396,7 +1436,8 @@ if predict_clicked:
                     min-height:175px;
 
                     box-shadow:
-                        0 4px 14px rgba(35,75,100,0.06);
+                        0 4px 14px
+                        rgba(35,75,100,0.06);
                 ">
 
                     <div style="
@@ -1410,14 +1451,17 @@ if predict_clicked:
 
                     🌦️ Weather:
                     <b>{weather}</b>
+
                     <br>
 
                     👁️ Visibility:
                     <b>{visibility}</b>
+
                     <br>
 
                     📆 Day:
                     <b>{day_of_week}</b>
+
                     <br>
 
                     🕐 Time:
@@ -1429,7 +1473,7 @@ if predict_clicked:
 
 
         # ====================================================
-        # SHAP
+        # SHAP TITLE
         # ====================================================
 
         st.html(
@@ -1456,9 +1500,9 @@ if predict_clicked:
         )
 
 
-        # ----------------------------------------------------
-        # SHAP CALCULATION
-        # ----------------------------------------------------
+        # ====================================================
+        # SHAP
+        # ====================================================
 
         with st.spinner(
             "Generating explanation..."
@@ -1466,10 +1510,8 @@ if predict_clicked:
 
             try:
 
-                explainer = (
-                    create_shap_explainer(
-                        model
-                    )
+                explainer = create_shap_explainer(
+                    model
                 )
 
 
@@ -1479,7 +1521,7 @@ if predict_clicked:
 
 
                 # ------------------------------------------------
-                # SHAP LIST OUTPUT
+                # HANDLE LIST OUTPUT
                 # ------------------------------------------------
 
                 if isinstance(
@@ -1519,7 +1561,7 @@ if predict_clicked:
 
 
                 # ------------------------------------------------
-                # TOP FEATURES
+                # TOP 10 FEATURES
                 # ------------------------------------------------
 
                 top_indices = np.argsort(

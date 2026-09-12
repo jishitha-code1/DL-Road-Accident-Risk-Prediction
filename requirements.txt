@@ -1,6 +1,8 @@
+streamlit
 tensorflow==2.21.0
-gradio
 pandas
 numpy
-scikit-learn
+scikit-learn==1.6.1
 joblib
+shap
+matplotlib

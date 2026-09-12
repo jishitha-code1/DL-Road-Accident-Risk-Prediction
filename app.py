@@ -67,17 +67,18 @@ st.markdown(
        SIDEBAR
        ====================================================== */
 
-    [data-testid="stSidebar"] {
-        background-color: #ADD8E6 !important;
-    }
+    /* SIDEBAR */
+[data-testid="stSidebar"] {
+    background-color: #FFC0CB !important;
+}
 
-    [data-testid="stSidebar"] > div {
-        background-color: #ADD8E6 !important;
-    }
+[data-testid="stSidebar"] > div {
+    background-color: #FFC0CB !important;
+}
 
-    [data-testid="stSidebarContent"] {
-        background-color: #ADD8E6 !important;
-    }
+[data-testid="stSidebarContent"] {
+    background-color: #FFC0CB !important;
+}
 
 
     /* ======================================================

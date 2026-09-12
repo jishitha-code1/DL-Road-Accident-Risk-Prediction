@@ -1,178 +1,31 @@
-import streamlit as st
+import gradio as gr
 import pandas as pd
 import numpy as np
 import joblib
-import shap
-import matplotlib.pyplot as plt
-
-from pathlib import Path
-from datetime import datetime
-from tensorflow.keras.models import load_model
+import tensorflow as tf
+import spaces
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# ZERO GPU STARTUP REQUIREMENT
 # ============================================================
 
-st.set_page_config(
-    page_title="Road Accident Risk Prediction",
-    page_icon="🚦",
-    layout="wide"
-)
+@spaces.GPU
+def _zerogpu_startup_probe():
+    return None
 
 
 # ============================================================
-# CUSTOM CSS
+# LOAD MODEL AND PREPROCESSING FILES
 # ============================================================
 
-st.markdown("""
-<style>
-
-    /* Main background */
-    .stApp {
-        background: #f4f7fb;
-    }
-
-    /* Main container */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
-    }
-
-    /* Main title */
-    .main-title {
-        font-size: 38px;
-        font-weight: 700;
-        color: #17365d;
-        margin-bottom: 5px;
-    }
-
-    .subtitle {
-        font-size: 17px;
-        color: #5f7185;
-        margin-bottom: 25px;
-    }
-
-    /* Section headings */
-    .section-title {
-        font-size: 23px;
-        font-weight: 650;
-        color: #17365d;
-        margin-top: 15px;
-        margin-bottom: 15px;
-    }
-
-    /* Cards */
-    .info-card {
-        background: white;
-        border-radius: 14px;
-        padding: 20px;
-        border: 1px solid #dce5ef;
-        box-shadow: 0 3px 12px rgba(30, 60, 90, 0.07);
-        margin-bottom: 18px;
-    }
-
-    /* Prediction card */
-    .prediction-card {
-        background: white;
-        border-radius: 16px;
-        padding: 25px;
-        border: 1px solid #dce5ef;
-        box-shadow: 0 4px 15px rgba(30, 60, 90, 0.08);
-        text-align: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
-    }
-
-    .prediction-score {
-        font-size: 42px;
-        font-weight: 750;
-        color: #17365d;
-    }
-
-    .prediction-category {
-        font-size: 25px;
-        font-weight: 700;
-        margin-top: 8px;
-    }
-
-    /* Buttons */
-    .stButton > button {
-        width: 100%;
-        border-radius: 10px;
-        height: 48px;
-        font-size: 17px;
-        font-weight: 600;
-        border: none;
-        background: #2f75b5;
-        color: white;
-    }
-
-    .stButton > button:hover {
-        background: #245d91;
-        color: white;
-    }
-
-    /* Input labels */
-    label {
-        font-weight: 600 !important;
-        color: #29445f !important;
-    }
-
-    /* Radio buttons */
-    div[role="radiogroup"] label {
-        color: #29445f !important;
-    }
-
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background: #edf3f9;
-    }
-
-    /* Dataframe */
-    .stDataFrame {
-        border-radius: 10px;
-    }
-
-</style>
-""", unsafe_allow_html=True)
+model = tf.keras.models.load_model("improved_model.keras")
+encoder = joblib.load("encoder.pkl")
+scaler = joblib.load("scaler.pkl")
 
 
 # ============================================================
-# MODEL PATHS
-# ============================================================
-
-BASE_DIR = Path(__file__).resolve().parent
-
-MODEL_DIR = BASE_DIR / "models"
-
-MODEL_PATH = MODEL_DIR / "improved_model.keras"
-ENCODER_PATH = MODEL_DIR / "encoder.pkl"
-SCALER_PATH = MODEL_DIR / "scaler.pkl"
-
-
-# ============================================================
-# LOAD MODEL AND PREPROCESSING OBJECTS
-# ============================================================
-
-@st.cache_resource
-def load_artifacts():
-
-    model = load_model(MODEL_PATH)
-
-    encoder = joblib.load(ENCODER_PATH)
-
-    scaler = joblib.load(SCALER_PATH)
-
-    return model, encoder, scaler
-
-
-model, encoder, scaler = load_artifacts()
-
-
-# ============================================================
-# FEATURE DEFINITIONS
+# FEATURE CONFIGURATION
 # ============================================================
 
 categorical_features = [
@@ -200,12 +53,12 @@ numerical_features = [
 # RISK CATEGORY
 # ============================================================
 
-def get_risk_category(score):
+def get_risk_category(risk_score):
 
-    if score < 0.25:
+    if risk_score < 0.25:
         return "Low Risk"
 
-    elif score < 0.60:
+    elif risk_score < 0.60:
         return "Medium Risk"
 
     else:
@@ -213,885 +66,735 @@ def get_risk_category(score):
 
 
 # ============================================================
-# PEAK HOUR CALCULATION
+# RISK CATEGORY HTML
 # ============================================================
 
-def calculate_peak_hour(hour):
+def get_category_html(category):
 
-    # Morning peak: 07:00 - 09:59
-    # Evening peak: 17:00 - 19:59
+    if category == "Low Risk":
 
-    if (7 <= hour < 10) or (17 <= hour < 20):
-        return 1
+        return """
+        <div class="risk-card low-risk">
+            <div class="risk-label">Risk Category</div>
+            <div class="risk-value">Low Risk</div>
+            <div class="risk-description">
+                The estimated risk level is relatively low.
+            </div>
+        </div>
+        """
 
-    return 0
+    elif category == "Medium Risk":
 
+        return """
+        <div class="risk-card medium-risk">
+            <div class="risk-label">Risk Category</div>
+            <div class="risk-value">Medium Risk</div>
+            <div class="risk-description">
+                The estimated risk level is moderate.
+            </div>
+        </div>
+        """
 
-# ============================================================
-# SHAP EXPLAINER
-# ============================================================
+    else:
 
-@st.cache_resource
-def create_shap_explainer(model):
-
-    background = np.zeros(
-        (1, 35),
-        dtype=np.float32
-    )
-
-    explainer = shap.DeepExplainer(
-        model,
-        background
-    )
-
-    return explainer
-
-
-# ============================================================
-# GET FEATURE NAMES
-# ============================================================
-
-try:
-
-    encoded_feature_names = list(
-        encoder.get_feature_names_out(categorical_features)
-    )
-
-except Exception:
-
-    encoded_feature_names = [
-        "city_Bangalore",
-        "city_Chandigarh",
-        "city_Chennai",
-        "city_Delhi",
-        "city_Hyderabad",
-        "city_Kolkata",
-        "city_Mumbai",
-        "city_Pune",
-        "road_type_highway",
-        "road_type_rural",
-        "road_type_urban",
-        "weather_clear",
-        "weather_fog",
-        "weather_rain",
-        "visibility_high",
-        "visibility_low",
-        "visibility_medium",
-        "traffic_density_high",
-        "traffic_density_low",
-        "traffic_density_medium",
-        "day_of_week_Friday",
-        "day_of_week_Monday",
-        "day_of_week_Saturday",
-        "day_of_week_Sunday",
-        "day_of_week_Thursday",
-        "day_of_week_Tuesday",
-        "day_of_week_Wednesday"
-    ]
-
-
-feature_names = encoded_feature_names + numerical_features
+        return """
+        <div class="risk-card high-risk">
+            <div class="risk-label">Risk Category</div>
+            <div class="risk-value">High Risk</div>
+            <div class="risk-description">
+                The estimated risk level is relatively high.
+            </div>
+        </div>
+        """
 
 
 # ============================================================
-# PREPROCESS INPUT
+# PREDICTION FUNCTION
 # ============================================================
 
-def preprocess_input(
+def predict_risk(
     city,
     road_type,
     weather,
     visibility,
     traffic_density,
-    selected_date_obj,
-    selected_time_obj,
+    date,
+    time,
+    day_of_week,
     is_weekend,
     is_peak_hour
 ):
 
-    # --------------------------------------------------------
-    # Date / Time values
-    # --------------------------------------------------------
-
-    year = selected_date_obj.year
-    month = selected_date_obj.month
-    date_day = selected_date_obj.day
-
-    hour = selected_time_obj.hour
-    minute = selected_time_obj.minute
-
-    day_of_week = selected_date_obj.strftime("%A")
-
-
-    # --------------------------------------------------------
-    # Categorical data
-    # --------------------------------------------------------
-
-    categorical_data = pd.DataFrame([{
-
-        "city": city,
-
-        "road_type": road_type,
-
-        "weather": weather,
-
-        "visibility": visibility,
-
-        "traffic_density": traffic_density,
-
-        "day_of_week": day_of_week
-
-    }])
-
-
-    # --------------------------------------------------------
-    # Encode categorical features
-    # --------------------------------------------------------
-
-    encoded_data = encoder.transform(
-        categorical_data
-    )
-
-    if hasattr(encoded_data, "toarray"):
-
-        encoded_data = encoded_data.toarray()
-
-
-    encoded_data = np.asarray(
-        encoded_data,
-        dtype=np.float32
-    )
-
-
-    # --------------------------------------------------------
-    # Numerical data
-    # --------------------------------------------------------
-
-    numerical_data = pd.DataFrame([{
-
-        "hour": hour,
-
-        # IMPORTANT:
-        # These are the values selected by the user.
-        "is_weekend": is_weekend,
-
-        "is_peak_hour": is_peak_hour,
-
-        "year": year,
-
-        "month": month,
-
-        "date_day": date_day,
-
-        "time_hour": hour,
-
-        "time_minute": minute
-
-    }])
-
-
-    # --------------------------------------------------------
-    # Scale numerical features
-    # --------------------------------------------------------
-
-    scaled_data = scaler.transform(
-        numerical_data
-    )
-
-    scaled_data = np.asarray(
-        scaled_data,
-        dtype=np.float32
-    )
-
-
-    # --------------------------------------------------------
-    # Combine
-    # --------------------------------------------------------
-
-    final_data = np.hstack([
-        encoded_data,
-        scaled_data
-    ])
-
-
-    final_data = np.asarray(
-        final_data,
-        dtype=np.float32
-    )
-
-
-    # --------------------------------------------------------
-    # Check feature count
-    # --------------------------------------------------------
-
-    if final_data.shape[1] != 35:
-
-        raise ValueError(
-            f"Expected 35 features but got "
-            f"{final_data.shape[1]}"
-        )
-
-
-    return final_data
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-
-with st.sidebar:
-
-    st.markdown(
-        "## 🚦 Road Accident Risk"
-    )
-
-    st.markdown(
-        """
-        **Deep Learning + Explainable AI**
-
-        This application estimates road
-        accident risk based on the conditions
-        entered by the user.
-        """
-    )
-
-    st.markdown("---")
-
-    st.markdown("### Risk Levels")
-
-    st.markdown(
-        """
-        🟢 **Low Risk**  
-        Score < 0.25
-
-        🟡 **Medium Risk**  
-        Score 0.25 – < 0.60
-
-        🔴 **High Risk**  
-        Score ≥ 0.60
-        """
-    )
-
-    st.markdown("---")
-
-    st.caption(
-        "DL-Based Road Accident Risk Prediction"
-    )
-
-
-# ============================================================
-# HEADER
-# ============================================================
-
-st.markdown(
-    '<div class="main-title">🚦 Road Accident Risk Prediction</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="subtitle">'
-    'Deep Learning based risk estimation with Explainable AI'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# INPUT SECTION
-# ============================================================
-
-st.markdown(
-    '<div class="section-title">Enter Road Conditions</div>',
-    unsafe_allow_html=True
-)
-
-
-# ------------------------------------------------------------
-# INPUT ROW 1
-# ------------------------------------------------------------
-
-col1, col2, col3 = st.columns(3)
-
-
-with col1:
-
-    city = st.selectbox(
-        "City",
-        [
-            "Bangalore",
-            "Chandigarh",
-            "Chennai",
-            "Delhi",
-            "Hyderabad",
-            "Kolkata",
-            "Mumbai",
-            "Pune"
-        ]
-    )
-
-
-with col2:
-
-    road_type = st.selectbox(
-        "Road Type",
-        [
-            "highway",
-            "rural",
-            "urban"
-        ]
-    )
-
-
-with col3:
-
-    weather = st.selectbox(
-        "Weather",
-        [
-            "clear",
-            "fog",
-            "rain"
-        ]
-    )
-
-
-# ------------------------------------------------------------
-# INPUT ROW 2
-# ------------------------------------------------------------
-
-col4, col5, col6 = st.columns(3)
-
-
-with col4:
-
-    visibility = st.selectbox(
-        "Visibility",
-        [
-            "high",
-            "low",
-            "medium"
-        ]
-    )
-
-
-with col5:
-
-    traffic_density = st.selectbox(
-        "Traffic Density",
-        [
-            "high",
-            "low",
-            "medium"
-        ]
-    )
-
-
-# ============================================================
-# CURRENT DATE AND TIME
-# ============================================================
-
-now = datetime.now()
-
-
-with col6:
-
-    selected_date_obj = st.date_input(
-        "Date",
-        value=now.date()
-    )
-
-
-# ------------------------------------------------------------
-# TIME
-# ------------------------------------------------------------
-
-col7, col8, col9 = st.columns(3)
-
-
-with col7:
-
-    selected_time_obj = st.time_input(
-        "Time",
-        value=now.time().replace(
-            second=0,
-            microsecond=0
-        )
-    )
-
-
-# ============================================================
-# AUTOMATIC VALUES
-# ============================================================
-
-selected_date = selected_date_obj.strftime(
-    "%Y-%m-%d"
-)
-
-selected_time = selected_time_obj.strftime(
-    "%H:%M"
-)
-
-
-# ------------------------------------------------------------
-# Day of week automatically from selected date
-# ------------------------------------------------------------
-
-day_of_week = selected_date_obj.strftime(
-    "%A"
-)
-
-
-# ------------------------------------------------------------
-# Automatic defaults
-# ------------------------------------------------------------
-
-automatic_weekend = (
-    1
-    if selected_date_obj.weekday() >= 5
-    else 0
-)
-
-
-automatic_peak_hour = calculate_peak_hour(
-    selected_time_obj.hour
-)
-
-
-# ============================================================
-# USER-CONTROLLABLE WEEKEND / PEAK HOUR
-# ============================================================
-
-with col8:
-
-    is_weekend = st.radio(
-        "Is Weekend",
-        options=[0, 1],
-
-        index=automatic_weekend,
-
-        format_func=lambda x:
-            "Yes" if x == 1 else "No",
-
-        horizontal=True
-    )
-
-
-with col9:
-
-    is_peak_hour = st.radio(
-        "Is Peak Hour",
-        options=[0, 1],
-
-        index=automatic_peak_hour,
-
-        format_func=lambda x:
-            "Yes" if x == 1 else "No",
-
-        horizontal=True
-    )
-
-
-# ============================================================
-# AUTOMATIC INFORMATION
-# ============================================================
-
-st.markdown(
-    f"""
-    <div class="info-card">
-
-    <b>Selected Date:</b> {selected_date}
-    &nbsp;&nbsp; | &nbsp;&nbsp;
-
-    <b>Day:</b> {day_of_week}
-    &nbsp;&nbsp; | &nbsp;&nbsp;
-
-    <b>Selected Time:</b> {selected_time}
-    &nbsp;&nbsp; | &nbsp;&nbsp;
-
-    <b>Weekend:</b> {"Yes" if is_weekend == 1 else "No"}
-    &nbsp;&nbsp; | &nbsp;&nbsp;
-
-    <b>Peak Hour:</b> {"Yes" if is_peak_hour == 1 else "No"}
-
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# PREDICT BUTTON
-# ============================================================
-
-st.markdown("")
-
-
-predict_button = st.button(
-    "Predict Accident Risk"
-)
-
-
-# ============================================================
-# PREDICTION
-# ============================================================
-
-if predict_button:
-
     try:
 
         # ----------------------------------------------------
-        # Prepare model input
+        # Convert date
         # ----------------------------------------------------
 
-        X_input = preprocess_input(
-
-            city=city,
-
-            road_type=road_type,
-
-            weather=weather,
-
-            visibility=visibility,
-
-            traffic_density=traffic_density,
-
-            selected_date_obj=selected_date_obj,
-
-            selected_time_obj=selected_time_obj,
-
-            is_weekend=is_weekend,
-
-            is_peak_hour=is_peak_hour
-
+        date_obj = pd.to_datetime(
+            date,
+            errors="raise"
         )
-
 
         # ----------------------------------------------------
-        # Model prediction
+        # Convert time
         # ----------------------------------------------------
 
-        prediction = model.predict(
-            X_input,
-            verbose=0
-        )
-
-
-        score = float(
-            np.asarray(prediction).flatten()[0]
-        )
-
-
-        # Keep score inside 0-1
-        score = float(
-            np.clip(score, 0, 1)
-        )
-
-
-        category = get_risk_category(
-            score
-        )
-
+        hour = int(time.split(":")[0])
+        minute = int(time.split(":")[1])
 
         # ----------------------------------------------------
-        # Prediction display
+        # Validate time
         # ----------------------------------------------------
 
-        st.markdown(
-            '<div class="section-title">Prediction Result</div>',
-            unsafe_allow_html=True
+        if hour < 0 or hour > 23:
+            raise ValueError("Hour must be between 00 and 23.")
+
+        if minute < 0 or minute > 59:
+            raise ValueError("Minute must be between 00 and 59.")
+
+        # ----------------------------------------------------
+        # Create input dataframe
+        # ----------------------------------------------------
+
+        input_data = pd.DataFrame([{
+
+            "city": city,
+            "road_type": road_type,
+            "weather": weather,
+            "visibility": visibility,
+            "traffic_density": traffic_density,
+            "day_of_week": day_of_week,
+
+            "hour": hour,
+            "is_weekend": int(is_weekend),
+            "is_peak_hour": int(is_peak_hour),
+
+            "year": date_obj.year,
+            "month": date_obj.month,
+            "date_day": date_obj.day,
+
+            "time_hour": hour,
+            "time_minute": minute
+        }])
+
+        # ----------------------------------------------------
+        # One-hot encoding
+        # ----------------------------------------------------
+
+        categorical_data = encoder.transform(
+            input_data[categorical_features]
         )
 
+        # ----------------------------------------------------
+        # Numerical scaling
+        # ----------------------------------------------------
 
-        st.markdown(
-            f"""
-            <div class="prediction-card">
+        numerical_data = scaler.transform(
+            input_data[numerical_features]
+        )
 
-                <div style="
-                    font-size:18px;
-                    color:#5f7185;
-                ">
-                    Predicted Risk Score
-                </div>
+        # ----------------------------------------------------
+        # Combine processed features
+        # ----------------------------------------------------
 
-                <div class="prediction-score">
-                    {score:.4f}
-                </div>
+        processed_input = np.hstack([
+            categorical_data,
+            numerical_data
+        ])
 
-                <div class="prediction-category">
-                    {category}
-                </div>
+        # ----------------------------------------------------
+        # Deep Learning prediction
+        # ----------------------------------------------------
 
+        risk_score = float(
+            model.predict(
+                processed_input,
+                verbose=0
+            )[0][0]
+        )
+
+        # ----------------------------------------------------
+        # Keep score within expected range
+        # ----------------------------------------------------
+
+        risk_score = np.clip(
+            risk_score,
+            0.10,
+            1.00
+        )
+
+        # ----------------------------------------------------
+        # Risk category
+        # ----------------------------------------------------
+
+        risk_category = get_risk_category(
+            risk_score
+        )
+
+        # ----------------------------------------------------
+        # Score HTML
+        # ----------------------------------------------------
+
+        score_html = f"""
+        <div class="score-card">
+            <div class="score-label">
+                Predicted Risk Score
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-
-        # ----------------------------------------------------
-        # Progress indicator
-        # ----------------------------------------------------
-
-        st.progress(
-            score
-        )
-
-
-        # ====================================================
-        # SHAP EXPLANATION
-        # ====================================================
-
-        st.markdown(
-            '<div class="section-title">'
-            'Why did the model make this prediction?'
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-
-        try:
-
-            explainer = create_shap_explainer(
-                model
-            )
-
-
-            shap_values = explainer.shap_values(
-                X_input
-            )
-
-
-            # Handle SHAP output shapes
-            if isinstance(
-                shap_values,
-                list
-            ):
-
-                shap_values = shap_values[0]
-
-
-            shap_values = np.asarray(
-                shap_values
-            )
-
-
-            if shap_values.ndim == 3:
-
-                shap_values = np.squeeze(
-                    shap_values,
-                    axis=-1
-                )
-
-
-            shap_values = shap_values.reshape(
-                X_input.shape[1]
-            )
-
-
-            # ------------------------------------------------
-            # Top 10 SHAP features
-            # ------------------------------------------------
-
-            shap_df = pd.DataFrame({
-
-                "Feature": feature_names,
-
-                "SHAP Value": shap_values
-
-            })
-
-
-            shap_df["Absolute Impact"] = (
-                shap_df["SHAP Value"].abs()
-            )
-
-
-            shap_df = shap_df.sort_values(
-                "Absolute Impact",
-                ascending=False
-            ).head(10)
-
-
-            # ------------------------------------------------
-            # SHAP chart
-            # ------------------------------------------------
-
-            chart_df = shap_df.sort_values(
-                "SHAP Value"
-            )
-
-
-            fig, ax = plt.subplots(
-                figsize=(9, 5)
-            )
-
-
-            ax.barh(
-                chart_df["Feature"],
-                chart_df["SHAP Value"]
-            )
-
-
-            ax.set_xlabel(
-                "SHAP Value"
-            )
-
-            ax.set_ylabel(
-                "Feature"
-            )
-
-            ax.set_title(
-                "Top Factors Influencing the Prediction"
-            )
-
-
-            plt.tight_layout()
-
-
-            st.pyplot(
-                fig,
-                use_container_width=True
-            )
-
-
-            plt.close(fig)
-
-
-            # ------------------------------------------------
-            # SHAP table
-            # ------------------------------------------------
-
-            st.markdown(
-                "**Top influencing features**"
-            )
-
-
-            display_df = shap_df[
-                [
-                    "Feature",
-                    "SHAP Value"
-                ]
-            ].copy()
-
-
-            display_df["SHAP Value"] = (
-                display_df["SHAP Value"]
-                .round(5)
-            )
-
-
-            st.dataframe(
-                display_df,
-                use_container_width=True,
-                hide_index=True
-            )
-
-
-        except Exception as shap_error:
-
-            st.warning(
-                "SHAP explanation could not be generated "
-                "for this prediction."
-            )
-
-            st.caption(
-                f"SHAP message: {shap_error}"
-            )
-
-
-        # ====================================================
-        # INPUT SUMMARY
-        # ====================================================
-
-        st.markdown(
-            '<div class="section-title">'
-            'Current Input Summary'
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-
-        summary_df = pd.DataFrame({
-
-            "Feature": [
-
-                "City",
-
-                "Road Type",
-
-                "Weather",
-
-                "Visibility",
-
-                "Traffic Density",
-
-                "Date",
-
-                "Time",
-
-                "Day of Week",
-
-                "Is Weekend",
-
-                "Is Peak Hour"
-
-            ],
-
-            "Selected Value": [
-
-                city,
-
-                road_type,
-
-                weather,
-
-                visibility,
-
-                traffic_density,
-
-                selected_date,
-
-                selected_time,
-
-                day_of_week,
-
-                "Yes" if is_weekend == 1 else "No",
-
-                "Yes" if is_peak_hour == 1 else "No"
-
-            ]
-
-        })
-
-
-        st.dataframe(
-            summary_df,
-            use_container_width=True,
-            hide_index=True
-        )
-
-
-        # ====================================================
-        # DISCLAIMER
-        # ====================================================
-
-        st.markdown(
-            """
-            <div class="info-card">
-
-            <b>Note:</b> This system provides an estimated
-            accident risk score based on the conditions entered
-            by the user. It does not guarantee that an accident
-            will or will not occur.
-
+            <div class="score-value">
+                {risk_score:.4f}
             </div>
-            """,
-            unsafe_allow_html=True
+
+            <div class="score-scale">
+                Scale: 0.10 — 1.00
+            </div>
+        </div>
+        """
+
+        # ----------------------------------------------------
+        # Category HTML
+        # ----------------------------------------------------
+
+        category_html = get_category_html(
+            risk_category
         )
 
+        return score_html, category_html
 
     except Exception as e:
 
-        st.error(
-            f"Prediction error: {e}"
+        error_html = f"""
+        <div class="error-card">
+            <div class="error-title">
+                Unable to generate prediction
+            </div>
+
+            <div class="error-message">
+                Please check the date and time format.
+            </div>
+        </div>
+        """
+
+        return error_html, ""
+
+
+# ============================================================
+# CUSTOM CSS
+# ============================================================
+
+css = """
+
+/* ---------------------------------------------------------
+   MAIN PAGE
+--------------------------------------------------------- */
+
+body {
+    background: #f6efe3 !important;
+}
+
+.gradio-container {
+    max-width: 1100px !important;
+    margin: auto !important;
+    background: #f6efe3 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+
+/* ---------------------------------------------------------
+   HEADER
+--------------------------------------------------------- */
+
+.main-header {
+    text-align: center;
+    padding: 28px 20px 12px 20px;
+}
+
+.main-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #173f6f;
+    margin-bottom: 8px;
+}
+
+.main-subtitle {
+    font-size: 16px;
+    color: #5f7185;
+    margin-bottom: 10px;
+}
+
+
+/* ---------------------------------------------------------
+   INPUT CARD
+--------------------------------------------------------- */
+
+.input-card {
+    background: #fffaf2;
+    border: 1px solid #e4d7c5;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(60, 45, 25, 0.08);
+}
+
+
+/* ---------------------------------------------------------
+   LABELS
+--------------------------------------------------------- */
+
+label,
+span {
+    color: #24496d !important;
+}
+
+label {
+    font-weight: 600 !important;
+}
+
+
+/* ---------------------------------------------------------
+   INPUT BOXES
+--------------------------------------------------------- */
+
+.gradio-container input,
+.gradio-container textarea,
+.gradio-container button,
+.gradio-container select {
+    border-radius: 10px !important;
+}
+
+.gradio-container input,
+.gradio-container textarea {
+    background: #fffdf8 !important;
+    border: 1px solid #d8cbb9 !important;
+}
+
+
+/* ---------------------------------------------------------
+   DROPDOWN
+--------------------------------------------------------- */
+
+.gradio-container .wrap {
+    border-radius: 10px !important;
+}
+
+
+/* ---------------------------------------------------------
+   PREDICT BUTTON
+--------------------------------------------------------- */
+
+.predict-btn {
+    background: linear-gradient(
+        135deg,
+        #2469ad 0%,
+        #174b80 55%,
+        #123c68 100%
+    ) !important;
+
+    color: white !important;
+
+    border: 2px solid #8db8df !important;
+
+    border-radius: 12px !important;
+
+    font-size: 18px !important;
+
+    font-weight: 700 !important;
+
+    padding: 14px 28px !important;
+
+    box-shadow:
+        0 4px 0 #0d3155,
+        0 8px 18px rgba(20, 65, 105, 0.25) !important;
+
+    transition: all 0.2s ease !important;
+}
+
+.predict-btn:hover {
+    background: linear-gradient(
+        135deg,
+        #2f7bc5 0%,
+        #1c5b97 55%,
+        #154775 100%
+    ) !important;
+
+    transform: translateY(-1px) !important;
+
+    box-shadow:
+        0 5px 0 #0d3155,
+        0 10px 22px rgba(20, 65, 105, 0.30) !important;
+}
+
+.predict-btn:active {
+    transform: translateY(3px) !important;
+
+    box-shadow:
+        0 2px 0 #0d3155,
+        0 4px 10px rgba(20, 65, 105, 0.20) !important;
+}
+
+
+/* ---------------------------------------------------------
+   RESULT SECTION
+--------------------------------------------------------- */
+
+.result-heading {
+    color: #173f6f;
+    font-size: 25px;
+    font-weight: 800;
+    margin: 25px 0 15px 0;
+}
+
+
+/* ---------------------------------------------------------
+   SCORE CARD
+--------------------------------------------------------- */
+
+.score-card {
+    background: linear-gradient(
+        135deg,
+        #ffffff,
+        #fff8ec
+    );
+
+    border: 1px solid #e0d1bd;
+
+    border-radius: 16px;
+
+    padding: 24px;
+
+    text-align: center;
+
+    box-shadow: 0 8px 20px rgba(60, 45, 25, 0.08);
+}
+
+.score-label {
+    font-size: 17px;
+    font-weight: 600;
+    color: #5f7185;
+}
+
+.score-value {
+    font-size: 38px;
+    font-weight: 800;
+    color: #1b527f;
+    margin-top: 8px;
+}
+
+.score-scale {
+    font-size: 13px;
+    color: #8793a0;
+    margin-top: 6px;
+}
+
+
+/* ---------------------------------------------------------
+   RISK CARDS
+--------------------------------------------------------- */
+
+.risk-card {
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.low-risk {
+    background: #edf7ef;
+    border: 1px solid #b8dcbc;
+}
+
+.medium-risk {
+    background: #fff6df;
+    border: 1px solid #e7ce91;
+}
+
+.high-risk {
+    background: #fff0ed;
+    border: 1px solid #e5b8ad;
+}
+
+.risk-label {
+    font-size: 15px;
+    color: #5f7185;
+    font-weight: 600;
+}
+
+.risk-value {
+    font-size: 30px;
+    font-weight: 800;
+    margin-top: 6px;
+    color: #24496d;
+}
+
+.risk-description {
+    font-size: 14px;
+    color: #68798a;
+    margin-top: 8px;
+}
+
+
+/* ---------------------------------------------------------
+   ERROR CARD
+--------------------------------------------------------- */
+
+.error-card {
+    background: #fff0ed;
+    border: 1px solid #e5b8ad;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
+.error-title {
+    color: #8a3f32;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.error-message {
+    color: #735b56;
+    margin-top: 6px;
+}
+
+
+/* ---------------------------------------------------------
+   FOOTER
+--------------------------------------------------------- */
+
+.footer-note {
+    text-align: center;
+    color: #7a8793;
+    font-size: 13px;
+    padding: 20px;
+}
+
+"""
+
+
+# ============================================================
+# GRADIO INTERFACE
+# ============================================================
+
+with gr.Blocks(
+    css=css,
+    title="DL-Based Road Accident Risk Prediction"
+) as demo:
+
+    # --------------------------------------------------------
+    # HEADER
+    # --------------------------------------------------------
+
+    gr.HTML(
+        """
+        <div class="main-header">
+
+            <div class="main-title">
+                🚗 DL-Based Road Accident Risk Prediction
+            </div>
+
+            <div class="main-subtitle">
+                Estimate accident risk using road, traffic,
+                weather, visibility and time-related conditions.
+            </div>
+
+        </div>
+        """
+    )
+
+
+    # --------------------------------------------------------
+    # INPUT SECTION
+    # --------------------------------------------------------
+
+    with gr.Column(elem_classes="input-card"):
+
+        gr.Markdown(
+            "### Enter Road & Environmental Conditions"
         )
 
-        st.exception(e)
+        with gr.Row():
+
+            with gr.Column():
+
+                city = gr.Dropdown(
+                    choices=[
+                        "Bangalore",
+                        "Chandigarh",
+                        "Chennai",
+                        "Delhi",
+                        "Hyderabad",
+                        "Kolkata",
+                        "Mumbai",
+                        "Pune"
+                    ],
+                    label="City",
+                    value="Delhi",
+                    allow_custom_value=True
+                )
+
+                road_type = gr.Dropdown(
+                    choices=[
+                        "highway",
+                        "rural",
+                        "urban"
+                    ],
+                    label="Road Type",
+                    value="urban"
+                )
+
+                weather = gr.Dropdown(
+                    choices=[
+                        "clear",
+                        "fog",
+                        "rain"
+                    ],
+                    label="Weather",
+                    value="clear"
+                )
+
+                visibility = gr.Dropdown(
+                    choices=[
+                        "high",
+                        "low",
+                        "medium"
+                    ],
+                    label="Visibility",
+                    value="high"
+                )
+
+                traffic_density = gr.Dropdown(
+                    choices=[
+                        "high",
+                        "low",
+                        "medium"
+                    ],
+                    label="Traffic Density",
+                    value="low"
+                )
+
+            with gr.Column():
+
+                date = gr.Textbox(
+                    label="Date",
+                    value="2026-09-11",
+                    placeholder="YYYY-MM-DD"
+                )
+
+                time = gr.Textbox(
+                    label="Time",
+                    value="10:00",
+                    placeholder="HH:MM"
+                )
+
+                day_of_week = gr.Dropdown(
+                    choices=[
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday"
+                    ],
+                    label="Day of Week",
+                    value="Friday"
+                )
+
+                is_weekend = gr.Radio(
+                    choices=[0, 1],
+                    label="Is Weekend? (0 = No, 1 = Yes)",
+                    value=0
+                )
+
+                is_peak_hour = gr.Radio(
+                    choices=[0, 1],
+                    label="Is Peak Hour? (0 = No, 1 = Yes)",
+                    value=0
+                )
+
+
+        # ----------------------------------------------------
+        # BUTTON
+        # ----------------------------------------------------
+
+        predict_button = gr.Button(
+            "Predict Accident Risk",
+            variant="primary",
+            elem_classes="predict-btn"
+        )
+
+
+    # --------------------------------------------------------
+    # RESULT SECTION
+    # --------------------------------------------------------
+
+    gr.HTML(
+        """
+        <div class="result-heading">
+            Prediction Result
+        </div>
+        """
+    )
+
+
+    with gr.Row():
+
+        score_output = gr.HTML(
+            label="Predicted Risk Score"
+        )
+
+        category_output = gr.HTML(
+            label="Risk Category"
+        )
+
+
+    # --------------------------------------------------------
+    # FOOTER
+    # --------------------------------------------------------
+
+    gr.HTML(
+        """
+        <div class="footer-note">
+            This system provides an estimated risk score based
+            on the conditions entered by the user.
+        </div>
+        """
+    )
+
+
+    # --------------------------------------------------------
+    # BUTTON ACTION
+    # --------------------------------------------------------
+
+    predict_button.click(
+        fn=predict_risk,
+        inputs=[
+            city,
+            road_type,
+            weather,
+            visibility,
+            traffic_density,
+            date,
+            time,
+            day_of_week,
+            is_weekend,
+            is_peak_hour
+        ],
+        outputs=[
+            score_output,
+            category_output
+        ]
+    )
+
+
+# ============================================================
+# LAUNCH
+# ============================================================
+
+if __name__ == "__main__":
+
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        ssr_mode=False
+    )

@@ -570,18 +570,22 @@ with col5:
     )
 
 
+# ============================================================
+# CHANGED ONLY: EDITABLE DATE
+# ============================================================
+
 with col6:
 
-    st.markdown("**Date**")
-
-    st.info(
-        f"📅 {current_date}",
-        icon="📅"
+    selected_date_obj = st.date_input(
+        "Date",
+        value=now.date()
     )
+
+    selected_date = selected_date_obj.strftime("%Y-%m-%d")
 
 
 # ============================================================
-# AUTOMATIC DATE / TIME INFORMATION
+# CHANGED ONLY: EDITABLE TIME
 # ============================================================
 
 col7, col8, col9 = st.columns(3)
@@ -589,29 +593,52 @@ col7, col8, col9 = st.columns(3)
 
 with col7:
 
-    st.markdown("**Time**")
-
-    st.info(
-        f"🕐 {current_time}",
-        icon="🕐"
+    selected_time_obj = st.time_input(
+        "Time",
+        value=now.time().replace(
+            second=0,
+            microsecond=0
+        )
     )
 
+    selected_time = selected_time_obj.strftime("%H:%M")
+
+
+# ============================================================
+# CHANGED ONLY: DAY OF WEEK FROM SELECTED DATE
+# ============================================================
 
 with col8:
+
+    selected_date_obj = pd.to_datetime(
+        selected_date
+    )
+
+    day_of_week = selected_date_obj.strftime("%A")
 
     st.markdown("**Day of Week**")
 
     st.info(
-        f"📆 {current_day}",
+        f"📆 {day_of_week}",
         icon="📆"
     )
 
 
+# ============================================================
+# CHANGED ONLY: WEEKEND FROM SELECTED DATE
+# ============================================================
+
 with col9:
 
-    automatic_weekend = 1 if now.weekday() >= 5 else 0
+    automatic_weekend = (
+        1 if selected_date_obj.weekday() >= 5 else 0
+    )
 
-    weekend_text = "Yes" if automatic_weekend == 1 else "No"
+    weekend_text = (
+        "Yes"
+        if automatic_weekend == 1
+        else "No"
+    )
 
     st.markdown("**Weekend**")
 
@@ -625,9 +652,15 @@ with col9:
 # AUTOMATIC PEAK HOUR
 # ============================================================
 
-automatic_peak_hour = calculate_peak_hour(now.hour)
+automatic_peak_hour = calculate_peak_hour(
+    selected_time_obj.hour
+)
 
-peak_text = "Yes" if automatic_peak_hour == 1 else "No"
+peak_text = (
+    "Yes"
+    if automatic_peak_hour == 1
+    else "No"
+)
 
 
 st.markdown(
@@ -683,11 +716,11 @@ with summary_col2:
 
     st.write(f"**Traffic Density:** {traffic_density}")
 
-    st.write(f"**Date:** {current_date}")
+    st.write(f"**Date:** {selected_date}")
 
-    st.write(f"**Time:** {current_time}")
+    st.write(f"**Time:** {selected_time}")
 
-    st.write(f"**Day:** {current_day}")
+    st.write(f"**Day:** {day_of_week}")
 
 
 # ============================================================
@@ -710,18 +743,17 @@ if predict_button:
     try:
 
         # ----------------------------------------------------
-        # Use current date/time
+        # CHANGED ONLY: USE SELECTED DATE/TIME VALUES
         # ----------------------------------------------------
 
-        selected_date = current_date
+        is_weekend = (
+            1 if selected_date_obj.weekday() >= 5
+            else 0
+        )
 
-        selected_time = current_time
-
-        day_of_week = current_day
-
-        is_weekend = automatic_weekend
-
-        is_peak_hour = automatic_peak_hour
+        is_peak_hour = calculate_peak_hour(
+            selected_time_obj.hour
+        )
 
 
         # ----------------------------------------------------

@@ -331,7 +331,8 @@ st.markdown(
 def load_model_and_preprocessing():
 
     model = tf.keras.models.load_model(
-        "improved_model.keras"
+        "improved_model.keras",
+        compile=False
     )
 
     encoder = joblib.load(

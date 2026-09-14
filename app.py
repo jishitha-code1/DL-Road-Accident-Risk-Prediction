@@ -29,7 +29,7 @@ st.set_page_config(
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
-MODEL_PATH = MODEL_DIR / "improved_model.keras"
+MODEL_PATH = MODEL_DIR / "improved_model_sigmoid.keras"
 ENCODER_PATH = MODEL_DIR / "encoder.pkl"
 SCALER_PATH = MODEL_DIR / "scaler.pkl"
 
@@ -582,9 +582,8 @@ def predict_risk(
         verbose=0
     )
 
-    risk_score = float(
-        prediction[0][0]
-    )
+    risk_score = float(prediction[0][0])
+    risk_score = float(np.clip(risk_score, 0.0, 1.0))
 
     return risk_score
 

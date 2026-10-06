@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -29,7 +30,9 @@ st.set_page_config(
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
-MODEL_PATH = MODEL_DIR / "improved_model_sigmoid.keras"
+# NEW BEST MODEL FROM COLAB
+MODEL_PATH = MODEL_DIR / "improved_model.keras"
+
 ENCODER_PATH = MODEL_DIR / "encoder.pkl"
 SCALER_PATH = MODEL_DIR / "scaler.pkl"
 
@@ -398,6 +401,19 @@ numerical_features = [
 
 
 # ============================================================
+# MODEL INFORMATION
+# ============================================================
+
+BEST_MODEL_NAME = "Model 2 - Improved DNN"
+BEST_MODEL_PARAMETERS = 4929
+
+BEST_MODEL_MAE = 0.04726163297891617
+BEST_MODEL_RMSE = 0.07603933074682204
+BEST_MODEL_R2 = 0.8755251939140223
+BEST_MODEL_TRAINING_TIME = 69.3298
+
+
+# ============================================================
 # LOAD MODEL AND PREPROCESSING
 # ============================================================
 
@@ -406,17 +422,17 @@ def load_model_and_preprocessing():
 
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
-            f"Model file not found: {MODEL_PATH}"
+            f"Model file not found:\n{MODEL_PATH}"
         )
 
     if not ENCODER_PATH.exists():
         raise FileNotFoundError(
-            f"Encoder file not found: {ENCODER_PATH}"
+            f"Encoder file not found:\n{ENCODER_PATH}"
         )
 
     if not SCALER_PATH.exists():
         raise FileNotFoundError(
-            f"Scaler file not found: {SCALER_PATH}"
+            f"Scaler file not found:\n{SCALER_PATH}"
         )
 
     model = tf.keras.models.load_model(
@@ -554,15 +570,17 @@ def preprocess_input(
     )
 
     # --------------------------------------------------------
-    # VERIFY 35 FEATURES
+    # VERIFY MODEL INPUT
     # --------------------------------------------------------
 
-    if processed_input.shape[1] != 35:
+    expected_features = 35
+
+    if processed_input.shape[1] != expected_features:
 
         raise ValueError(
-            "Model input mismatch. "
-            f"Expected 35 features but got "
-            f"{processed_input.shape[1]}."
+            f"Model input mismatch. "
+            f"Expected {expected_features} features "
+            f"but got {processed_input.shape[1]}."
         )
 
     return processed_input
@@ -582,8 +600,22 @@ def predict_risk(
         verbose=0
     )
 
-    risk_score = float(prediction[0][0])
-    risk_score = float(np.clip(risk_score, 0.0, 1.0))
+    raw_score = float(
+        prediction[0][0]
+    )
+
+    # The new Model 2 has a linear output.
+    # Keep the displayed risk score within 0-1
+    # because the project's risk-score interpretation
+    # uses this range.
+
+    risk_score = float(
+        np.clip(
+            raw_score,
+            0.0,
+            1.0
+        )
+    )
 
     return risk_score
 
@@ -700,7 +732,10 @@ with st.sidebar:
     )
 
     st.markdown(
-        '<div class="sidebar-description">This application estimates road accident risk based on the conditions entered by the user.</div>',
+        '<div class="sidebar-description">'
+        'This application estimates road accident risk based on '
+        'the conditions entered by the user.'
+        '</div>',
         unsafe_allow_html=True
     )
 
@@ -713,24 +748,33 @@ with st.sidebar:
         "### Risk Levels"
     )
 
-    # LOW RISK
-
     st.markdown(
-        '<div class="risk-item"><div class="risk-name"><span class="low-dot">●</span>&nbsp; Low Risk</div><div class="risk-score">Score &lt; 0.25</div></div>',
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="low-dot">●</span>&nbsp; Low Risk'
+        '</div>'
+        '<div class="risk-score">Score &lt; 0.25</div>'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    # MEDIUM RISK
-
     st.markdown(
-        '<div class="risk-item"><div class="risk-name"><span class="medium-dot">●</span>&nbsp; Medium Risk</div><div class="risk-score">Score 0.25 – &lt; 0.60</div></div>',
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="medium-dot">●</span>&nbsp; Medium Risk'
+        '</div>'
+        '<div class="risk-score">Score 0.25 – &lt; 0.60</div>'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    # HIGH RISK
-
     st.markdown(
-        '<div class="risk-item"><div class="risk-name"><span class="high-dot">●</span>&nbsp; High Risk</div><div class="risk-score">Score ≥ 0.60</div></div>',
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="high-dot">●</span>&nbsp; High Risk'
+        '</div>'
+        '<div class="risk-score">Score ≥ 0.60</div>'
+        '</div>',
         unsafe_allow_html=True
     )
 
@@ -740,7 +784,9 @@ with st.sidebar:
     )
 
     st.markdown(
-        '<div style="font-size:14px;color:#315878;margin-top:20px;">DL-Based Road Accident Risk Prediction</div>',
+        '<div style="font-size:14px;color:#315878;margin-top:20px;">'
+        'DL-Based Road Accident Risk Prediction'
+        '</div>',
         unsafe_allow_html=True
     )
 
@@ -750,12 +796,16 @@ with st.sidebar:
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">🚦 Road Accident Risk Prediction</div>',
+    '<div class="main-title">'
+    '🚦 Road Accident Risk Prediction'
+    '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="main-subtitle">Deep Learning based risk estimation with Explainable AI</div>',
+    '<div class="main-subtitle">'
+    'Deep Learning based risk estimation with Explainable AI'
+    '</div>',
     unsafe_allow_html=True
 )
 
@@ -881,7 +931,7 @@ with col6:
 
 
 # ============================================================
-# DAY OF WEEK FROM DATE
+# DAY OF WEEK
 # ============================================================
 
 selected_date_timestamp = pd.to_datetime(
@@ -897,7 +947,7 @@ day_of_week = (
 # AUTOMATIC WEEKEND
 # ============================================================
 
-automatic_weekend = (
+is_weekend = (
     1
     if selected_date_timestamp.weekday() >= 5
     else 0
@@ -926,109 +976,13 @@ with col7:
 # AUTOMATIC PEAK HOUR
 # ============================================================
 
-automatic_peak_hour = calculate_peak_hour(
+is_peak_hour = calculate_peak_hour(
     selected_time.hour
 )
 
 
 # ============================================================
-# WEEKEND STATE
-# ============================================================
-
-if "is_weekend" not in st.session_state:
-
-    st.session_state.is_weekend = (
-        automatic_weekend
-    )
-
-
-if "previous_date" not in st.session_state:
-
-    st.session_state.previous_date = (
-        selected_date
-    )
-
-
-if (
-    selected_date
-    != st.session_state.previous_date
-):
-
-    st.session_state.is_weekend = (
-        automatic_weekend
-    )
-
-    st.session_state.previous_date = (
-        selected_date
-    )
-
-
-# ============================================================
-# PEAK HOUR STATE
-# ============================================================
-
-if "is_peak_hour" not in st.session_state:
-
-    st.session_state.is_peak_hour = (
-        automatic_peak_hour
-    )
-
-
-if "previous_time" not in st.session_state:
-
-    st.session_state.previous_time = (
-        selected_time
-    )
-
-
-if (
-    selected_time
-    != st.session_state.previous_time
-):
-
-    st.session_state.is_peak_hour = (
-        automatic_peak_hour
-    )
-
-    st.session_state.previous_time = (
-        selected_time
-    )
-
-
-# ============================================================
-# WEEKEND
-# ============================================================
-
-with col8:
-
-    is_weekend = st.radio(
-        "Is Weekend",
-        options=[0, 1],
-        format_func=lambda x:
-            "Yes" if x == 1 else "No",
-        horizontal=True,
-        key="is_weekend"
-    )
-
-
-# ============================================================
-# PEAK HOUR
-# ============================================================
-
-with col9:
-
-    is_peak_hour = st.radio(
-        "Is Peak Hour",
-        options=[0, 1],
-        format_func=lambda x:
-            "Yes" if x == 1 else "No",
-        horizontal=True,
-        key="is_peak_hour"
-    )
-
-
-# ============================================================
-# SUMMARY
+# SUMMARY TEXT
 # ============================================================
 
 weekend_text = (
@@ -1098,6 +1052,7 @@ if predict_button:
             scaler=scaler
         )
 
+
         # ----------------------------------------------------
         # PREDICT
         # ----------------------------------------------------
@@ -1107,6 +1062,7 @@ if predict_button:
             processed_input
         )
 
+
         # ----------------------------------------------------
         # CATEGORY
         # ----------------------------------------------------
@@ -1115,8 +1071,9 @@ if predict_button:
             risk_score
         )
 
+
         # ----------------------------------------------------
-        # RESULT TITLE
+        # RESULT
         # ----------------------------------------------------
 
         st.markdown(
@@ -1124,9 +1081,6 @@ if predict_button:
             unsafe_allow_html=True
         )
 
-        # ----------------------------------------------------
-        # RESULT CSS CLASS
-        # ----------------------------------------------------
 
         if risk_category == "Low Risk":
 
@@ -1141,15 +1095,17 @@ if predict_button:
             category_class = "high-risk"
 
 
-        # ----------------------------------------------------
-        # RESULT CARD
-        # ----------------------------------------------------
-
         result_html = (
             f'<div class="result-card">'
-            f'<div class="result-title">Predicted Risk Score</div>'
-            f'<div class="score">{risk_score:.4f}</div>'
-            f'<div class="{category_class}">{risk_category}</div>'
+            f'<div class="result-title">'
+            f'Predicted Risk Score'
+            f'</div>'
+            f'<div class="score">'
+            f'{risk_score:.4f}'
+            f'</div>'
+            f'<div class="{category_class}">'
+            f'{risk_category}'
+            f'</div>'
             f'</div>'
         )
 
@@ -1193,9 +1149,11 @@ if predict_button:
 
             right_summary = (
                 f'<div class="info-card">'
-                f'<b>Date:</b> {selected_date.strftime("%Y-%m-%d")}<br><br>'
+                f'<b>Date:</b> '
+                f'{selected_date.strftime("%Y-%m-%d")}<br><br>'
                 f'<b>Day:</b> {day_of_week}<br><br>'
-                f'<b>Time:</b> {selected_time.strftime("%H:%M")}<br><br>'
+                f'<b>Time:</b> '
+                f'{selected_time.strftime("%H:%M")}<br><br>'
                 f'<b>Weekend:</b> {weekend_text}<br><br>'
                 f'<b>Peak Hour:</b> {peak_text}'
                 f'</div>'
@@ -1217,7 +1175,10 @@ if predict_button:
         )
 
         st.markdown(
-            '<div class="info-card">SHAP explains how the input features contributed to the predicted risk score.</div>',
+            '<div class="info-card">'
+            'SHAP explains how the input features contributed '
+            'to the predicted risk score.'
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -1262,6 +1223,7 @@ if predict_button:
                     "Absolute Impact",
                     ascending=False
                 )
+
 
                 top_features = (
                     shap_df
@@ -1313,7 +1275,9 @@ if predict_button:
                 # ------------------------------------------------
 
                 st.markdown(
-                    '<div class="info-card"><b>Feature Contribution Details</b></div>',
+                    '<div class="info-card">'
+                    '<b>Feature Contribution Details</b>'
+                    '</div>',
                     unsafe_allow_html=True
                 )
 
@@ -1338,7 +1302,8 @@ if predict_button:
             else:
 
                 st.warning(
-                    "SHAP feature names do not match the model input size."
+                    "SHAP feature names do not match "
+                    "the model input size."
                 )
 
         else:
@@ -1350,12 +1315,81 @@ if predict_button:
 
 
         # ====================================================
+        # MODEL PERFORMANCE
+        # ====================================================
+
+        st.markdown(
+            '<div class="section-title">Model Performance</div>',
+            unsafe_allow_html=True
+        )
+
+        performance_col1, performance_col2, performance_col3, performance_col4 = st.columns(4)
+
+
+        with performance_col1:
+
+            st.metric(
+                "MAE",
+                f"{BEST_MODEL_MAE:.4f}"
+            )
+
+
+        with performance_col2:
+
+            st.metric(
+                "RMSE",
+                f"{BEST_MODEL_RMSE:.4f}"
+            )
+
+
+        with performance_col3:
+
+            st.metric(
+                "R² Score",
+                f"{BEST_MODEL_R2:.4f}"
+            )
+
+
+        with performance_col4:
+
+            st.metric(
+                "Parameters",
+                f"{BEST_MODEL_PARAMETERS:,}"
+            )
+
+
+        st.markdown(
+            f'<div class="info-card">'
+            f'<b>Selected Model:</b> {BEST_MODEL_NAME}<br><br>'
+            f'<b>Training Time:</b> '
+            f'{BEST_MODEL_TRAINING_TIME:.2f} seconds<br><br>'
+            f'<b>Architecture:</b> '
+            f'35 → 64 → 32 → 16 → 1<br><br>'
+            f'<b>Optimizer:</b> Adam<br>'
+            f'<b>Loss:</b> Mean Squared Error (MSE)<br>'
+            f'<b>Regularization:</b> 20% Dropout'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+
+        # ====================================================
         # MODEL INFORMATION
         # ====================================================
 
         with st.expander(
             "Model and preprocessing information"
         ):
+
+            st.write(
+                "Selected model:",
+                BEST_MODEL_NAME
+            )
+
+            st.write(
+                "Model parameters:",
+                f"{BEST_MODEL_PARAMETERS:,}"
+            )
 
             st.write(
                 "Processed feature count:",
@@ -1386,13 +1420,24 @@ if predict_button:
                 "Deep Learning model.predict()"
             )
 
+            st.write(
+                "Explainability method:",
+                "SHAP DeepExplainer"
+            )
+
 
         # ====================================================
         # DISCLAIMER
         # ====================================================
 
         st.markdown(
-            '<div class="info-card"><b>Note:</b> This application provides an estimated road accident risk score based on the conditions entered by the user. It does not guarantee that an accident will or will not occur.</div>',
+            '<div class="info-card">'
+            '<b>Note:</b> This application estimates accident '
+            'risk based on the provided road, traffic, weather, '
+            'visibility and time-related conditions. '
+            'The prediction is an estimate and does not guarantee '
+            'that an accident will or will not occur.'
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -1413,6 +1458,10 @@ if predict_button:
 # ============================================================
 
 st.markdown(
-    '<div class="footer-text">DL-Based Road Accident Risk Prediction &nbsp; | &nbsp; Deep Learning + Explainable AI</div>',
+    '<div class="footer-text">'
+    'DL-Based Road Accident Risk Prediction '
+    '&nbsp; | &nbsp; '
+    'Deep Learning + Explainable AI'
+    '</div>',
     unsafe_allow_html=True
 )

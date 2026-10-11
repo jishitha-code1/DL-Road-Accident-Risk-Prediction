@@ -24,31 +24,17 @@ st.set_page_config(
 
 
 # ============================================================
-# PATHS — KEEPING YOUR EXISTING FILENAMES
+# PATHS
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
+# NEW BEST MODEL FROM COLAB
 MODEL_PATH = MODEL_DIR / "improved_model (2).keras"
+
 ENCODER_PATH = MODEL_DIR / "encoder (1).pkl"
 SCALER_PATH = MODEL_DIR / "scaler (2).pkl"
-
-
-# ============================================================
-# LATEST MODEL PERFORMANCE
-# ============================================================
-
-BEST_MODEL_NAME = "Updated Deep Learning Model"
-
-BEST_MODEL_MAE = 0.0492
-BEST_MODEL_RMSE = 0.0720
-BEST_MODEL_R2 = 0.8883
-
-# The latest experiment's exact training time and parameter
-# count have not been verified, so do not reuse old values.
-BEST_MODEL_PARAMETERS = None
-BEST_MODEL_TRAINING_TIME = None
 
 
 # ============================================================
@@ -58,8 +44,19 @@ BEST_MODEL_TRAINING_TIME = None
 st.markdown(
     """
 <style>
-.stApp,
-[data-testid="stAppViewContainer"],
+
+/* =========================================================
+   MAIN PAGE
+   ========================================================= */
+
+.stApp {
+    background-color: #ADD8E6;
+}
+
+[data-testid="stAppViewContainer"] {
+    background-color: #ADD8E6;
+}
+
 [data-testid="stMain"] {
     background-color: #ADD8E6;
 }
@@ -70,19 +67,44 @@ st.markdown(
     padding-bottom: 3rem;
 }
 
-[data-testid="stSidebar"],
-[data-testid="stSidebar"] > div,
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+[data-testid="stSidebar"] {
+    background-color: #EED9C4 !important;
+}
+
+[data-testid="stSidebar"] > div {
+    background-color: #EED9C4 !important;
+}
+
 [data-testid="stSidebarContent"] {
     background-color: #EED9C4 !important;
 }
 
-h1, h2, h3, h4 {
+
+/* =========================================================
+   GENERAL TEXT
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4 {
     color: #173F68 !important;
 }
 
-p, label {
+p,
+label {
     color: #173F68;
 }
+
+
+/* =========================================================
+   MAIN TITLE
+   ========================================================= */
 
 .main-title {
     font-size: 42px;
@@ -99,6 +121,11 @@ p, label {
     text-align: center;
     margin-bottom: 32px;
 }
+
+
+/* =========================================================
+   SIDEBAR TITLE
+   ========================================================= */
 
 .sidebar-title {
     font-size: 27px;
@@ -120,11 +147,21 @@ p, label {
     margin-bottom: 25px;
 }
 
+
+/* =========================================================
+   DIVIDER
+   ========================================================= */
+
 .custom-divider {
     height: 1px;
     background-color: rgba(23, 63, 104, 0.22);
     margin: 30px 0;
 }
+
+
+/* =========================================================
+   SECTION TITLES
+   ========================================================= */
 
 .section-title {
     font-size: 28px;
@@ -133,6 +170,11 @@ p, label {
     margin-top: 28px;
     margin-bottom: 24px;
 }
+
+
+/* =========================================================
+   CARDS
+   ========================================================= */
 
 .info-card {
     background-color: #F7FBFD;
@@ -153,30 +195,49 @@ p, label {
     box-shadow: 0 5px 16px rgba(30, 70, 100, 0.08);
 }
 
+
+/* =========================================================
+   PREDICT BUTTON
+   ========================================================= */
+
 div.stButton > button {
     width: 100%;
     height: 58px;
+
     background-color: #EED9C4 !important;
     color: #173F68 !important;
+
     border: 1px solid #F09AAA !important;
     border-radius: 15px !important;
+
     font-size: 17px !important;
     font-weight: 700 !important;
+
     box-shadow: 0 7px 16px rgba(80, 50, 60, 0.16);
+
     transition: all 0.2s ease-in-out;
 }
 
 div.stButton > button:hover {
     background-color: #F4B0C0 !important;
     color: #173F68 !important;
+
     border-color: #E996A8 !important;
+
     transform: translateY(-1px);
 }
 
-div[data-baseweb="select"] > div,
-div[data-baseweb="input"] > div,
-[data-testid="stDateInput"] > div,
-[data-testid="stTimeInput"] > div {
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+div[data-baseweb="select"] > div {
+    background-color: #F8FAFC !important;
+    border-radius: 10px !important;
+}
+
+div[data-baseweb="input"] > div {
     background-color: #F8FAFC !important;
     border-radius: 10px !important;
 }
@@ -184,6 +245,21 @@ div[data-baseweb="input"] > div,
 input {
     color: #173F68 !important;
 }
+
+[data-testid="stDateInput"] > div {
+    background-color: #F8FAFC !important;
+    border-radius: 10px !important;
+}
+
+[data-testid="stTimeInput"] > div {
+    background-color: #F8FAFC !important;
+    border-radius: 10px !important;
+}
+
+
+/* =========================================================
+   RESULT CARD
+   ========================================================= */
 
 .result-card {
     background-color: #F7FBFD;
@@ -209,28 +285,45 @@ input {
     margin: 5px 0 18px 0;
 }
 
-.low-risk, .medium-risk, .high-risk {
+
+/* =========================================================
+   RISK LABELS
+   ========================================================= */
+
+.low-risk {
     display: inline-block;
+    background-color: #D8F5E5;
+    color: #16824A;
     padding: 10px 28px;
     border-radius: 25px;
     font-size: 17px;
     font-weight: 750;
 }
 
-.low-risk {
-    background-color: #D8F5E5;
-    color: #16824A;
-}
-
 .medium-risk {
+    display: inline-block;
     background-color: #FFF1C9;
     color: #B77900;
+    padding: 10px 28px;
+    border-radius: 25px;
+    font-size: 17px;
+    font-weight: 750;
 }
 
 .high-risk {
+    display: inline-block;
     background-color: #FFE0E0;
     color: #C62828;
+    padding: 10px 28px;
+    border-radius: 25px;
+    font-size: 17px;
+    font-weight: 750;
 }
+
+
+/* =========================================================
+   SIDEBAR RISK ITEMS
+   ========================================================= */
 
 .risk-item {
     margin-top: 24px;
@@ -264,12 +357,18 @@ input {
     font-size: 22px;
 }
 
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
 .footer-text {
     text-align: center;
     color: #315878;
     font-size: 14px;
     margin-top: 35px;
 }
+
 </style>
 """,
     unsafe_allow_html=True
@@ -277,7 +376,7 @@ input {
 
 
 # ============================================================
-# FEATURE DEFINITIONS — ORIGINAL 35-FEATURE PIPELINE
+# FEATURE DEFINITIONS
 # ============================================================
 
 categorical_features = [
@@ -302,22 +401,52 @@ numerical_features = [
 
 
 # ============================================================
+# MODEL INFORMATION
+# ============================================================
+
+BEST_MODEL_NAME = "Model 2 - Improved DNN"
+BEST_MODEL_PARAMETERS = 4929
+
+BEST_MODEL_MAE = 0.04726163297891617
+BEST_MODEL_RMSE = 0.07603933074682204
+BEST_MODEL_R2 = 0.8755251939140223
+BEST_MODEL_TRAINING_TIME = 69.3298
+
+
+# ============================================================
 # LOAD MODEL AND PREPROCESSING
 # ============================================================
 
 @st.cache_resource
 def load_model_and_preprocessing():
-    for path in [MODEL_PATH, ENCODER_PATH, SCALER_PATH]:
-        if not path.exists():
-            raise FileNotFoundError(f"File not found: {path}")
+
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Model file not found:\n{MODEL_PATH}"
+        )
+
+    if not ENCODER_PATH.exists():
+        raise FileNotFoundError(
+            f"Encoder file not found:\n{ENCODER_PATH}"
+        )
+
+    if not SCALER_PATH.exists():
+        raise FileNotFoundError(
+            f"Scaler file not found:\n{SCALER_PATH}"
+        )
 
     model = tf.keras.models.load_model(
         MODEL_PATH,
         compile=False
     )
 
-    encoder = joblib.load(ENCODER_PATH)
-    scaler = joblib.load(SCALER_PATH)
+    encoder = joblib.load(
+        ENCODER_PATH
+    )
+
+    scaler = joblib.load(
+        SCALER_PATH
+    )
 
     return model, encoder, scaler
 
@@ -327,23 +456,34 @@ def load_model_and_preprocessing():
 # ============================================================
 
 def get_risk_category(score):
+
     if score < 0.25:
         return "Low Risk"
+
     elif score < 0.60:
         return "Medium Risk"
-    return "High Risk"
+
+    else:
+        return "High Risk"
 
 
 # ============================================================
-# AUTOMATIC PEAK HOUR
+# PEAK HOUR CALCULATION
 # ============================================================
 
 def calculate_peak_hour(hour):
-    return int(7 <= hour <= 10 or 17 <= hour <= 20)
+
+    if 7 <= hour <= 10:
+        return 1
+
+    if 17 <= hour <= 20:
+        return 1
+
+    return 0
 
 
 # ============================================================
-# PREPROCESS INPUT — ORIGINAL PIPELINE
+# PREPROCESS INPUT
 # ============================================================
 
 def preprocess_input(
@@ -360,42 +500,88 @@ def preprocess_input(
     encoder,
     scaler
 ):
-    date_obj = pd.to_datetime(selected_date)
+
+    date_obj = pd.to_datetime(
+        selected_date
+    )
+
     hour = selected_time.hour
     minute = selected_time.minute
 
-    input_data = pd.DataFrame([{
-        "city": city,
-        "road_type": road_type,
-        "weather": weather,
-        "visibility": visibility,
-        "traffic_density": traffic_density,
-        "day_of_week": day_of_week,
-        "hour": hour,
-        "is_weekend": int(is_weekend),
-        "is_peak_hour": int(is_peak_hour),
-        "year": date_obj.year,
-        "month": date_obj.month,
-        "date_day": date_obj.day,
-        "time_hour": hour,
-        "time_minute": minute
-    }])
+    input_data = pd.DataFrame(
+        [{
+            "city": city,
+            "road_type": road_type,
+            "weather": weather,
+            "visibility": visibility,
+            "traffic_density": traffic_density,
+            "day_of_week": day_of_week,
+
+            "hour": hour,
+            "is_weekend": int(is_weekend),
+            "is_peak_hour": int(is_peak_hour),
+
+            "year": date_obj.year,
+            "month": date_obj.month,
+            "date_day": date_obj.day,
+
+            "time_hour": hour,
+            "time_minute": minute
+        }]
+    )
+
+    # --------------------------------------------------------
+    # CATEGORICAL ENCODING
+    # --------------------------------------------------------
 
     categorical_data = encoder.transform(
         input_data[categorical_features]
     )
 
-    if hasattr(categorical_data, "toarray"):
-        categorical_data = categorical_data.toarray()
+    if hasattr(
+        categorical_data,
+        "toarray"
+    ):
+        categorical_data = (
+            categorical_data.toarray()
+        )
+
+    # --------------------------------------------------------
+    # NUMERICAL SCALING
+    # --------------------------------------------------------
 
     numerical_data = scaler.transform(
         input_data[numerical_features]
     )
 
-    processed_input = np.hstack([
-        categorical_data,
-        numerical_data
-    ]).astype(np.float32)
+    # --------------------------------------------------------
+    # COMBINE FEATURES
+    # --------------------------------------------------------
+
+    processed_input = np.hstack(
+        [
+            categorical_data,
+            numerical_data
+        ]
+    )
+
+    processed_input = processed_input.astype(
+        np.float32
+    )
+
+    # --------------------------------------------------------
+    # VERIFY MODEL INPUT
+    # --------------------------------------------------------
+
+    expected_features = 35
+
+    if processed_input.shape[1] != expected_features:
+
+        raise ValueError(
+            f"Model input mismatch. "
+            f"Expected {expected_features} features "
+            f"but got {processed_input.shape[1]}."
+        )
 
     return processed_input
 
@@ -404,23 +590,34 @@ def preprocess_input(
 # MODEL PREDICTION
 # ============================================================
 
-def predict_risk(model, processed_input):
-    expected_features = int(model.input_shape[-1])
+def predict_risk(
+    model,
+    processed_input
+):
 
-    if processed_input.shape[1] != expected_features:
-        raise ValueError(
-            f"Preprocessing produced {processed_input.shape[1]} "
-            f"features, but the saved model expects "
-            f"{expected_features}. The encoder/scaler and feature "
-            f"pipeline must match the model used in training. "
-            f"Do not use the old 35-feature pipeline with a "
-            f"3-feature or 5-feature model."
+    prediction = model.predict(
+        processed_input,
+        verbose=0
+    )
+
+    raw_score = float(
+        prediction[0][0]
+    )
+
+    # The new Model 2 has a linear output.
+    # Keep the displayed risk score within 0-1
+    # because the project's risk-score interpretation
+    # uses this range.
+
+    risk_score = float(
+        np.clip(
+            raw_score,
+            0.0,
+            1.0
         )
+    )
 
-    prediction = model.predict(processed_input, verbose=0)
-    raw_score = float(np.asarray(prediction).reshape(-1)[0])
-
-    return float(np.clip(raw_score, 0.0, 1.0))
+    return risk_score
 
 
 # ============================================================
@@ -428,45 +625,94 @@ def predict_risk(model, processed_input):
 # ============================================================
 
 @st.cache_resource
-def create_shap_explainer(_model):
+def create_shap_explainer(model):
+
     try:
+
         background = np.zeros(
-            (1, int(_model.input_shape[-1])),
+            (1, 35),
             dtype=np.float32
         )
-        return shap.DeepExplainer(_model, background)
+
+        explainer = shap.DeepExplainer(
+            model,
+            background
+        )
+
+        return explainer
+
     except Exception:
+
         return None
 
 
-def calculate_shap_values(explainer, processed_input):
+# ============================================================
+# SHAP VALUES
+# ============================================================
+
+def calculate_shap_values(
+    explainer,
+    processed_input
+):
+
     if explainer is None:
         return None
 
     try:
-        shap_values = explainer.shap_values(processed_input)
 
-        if isinstance(shap_values, list):
+        shap_values = explainer.shap_values(
+            processed_input
+        )
+
+        if isinstance(
+            shap_values,
+            list
+        ):
             shap_values = shap_values[0]
 
-        shap_values = np.asarray(shap_values)
+        shap_values = np.asarray(
+            shap_values
+        )
 
         if shap_values.ndim == 3:
-            shap_values = np.squeeze(shap_values, axis=-1)
+
+            shap_values = np.squeeze(
+                shap_values,
+                axis=-1
+            )
 
         if shap_values.ndim == 1:
-            shap_values = shap_values.reshape(1, -1)
+
+            shap_values = shap_values.reshape(
+                1,
+                -1
+            )
 
         return shap_values
+
     except Exception:
+
         return None
 
 
-def get_feature_names(encoder):
+# ============================================================
+# FEATURE NAMES
+# ============================================================
+
+def get_feature_names(
+    encoder
+):
+
     encoded_features = list(
-        encoder.get_feature_names_out(categorical_features)
+        encoder.get_feature_names_out(
+            categorical_features
+        )
     )
-    return encoded_features + numerical_features
+
+    return (
+        encoded_features
+        + numerical_features
+    )
 
 
 # ============================================================
@@ -474,6 +720,7 @@ def get_feature_names(encoder):
 # ============================================================
 
 with st.sidebar:
+
     st.markdown(
         '<div class="sidebar-title">🚦 Road Accident Risk</div>',
         unsafe_allow_html=True
@@ -492,31 +739,49 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
-    st.markdown("### Risk Levels")
-
     st.markdown(
-        '<div class="risk-item"><div class="risk-name">'
-        '<span class="low-dot">●</span>&nbsp; Low Risk</div>'
-        '<div class="risk-score">Score &lt; 0.25</div></div>',
+        '<div class="custom-divider"></div>',
         unsafe_allow_html=True
     )
 
     st.markdown(
-        '<div class="risk-item"><div class="risk-name">'
-        '<span class="medium-dot">●</span>&nbsp; Medium Risk</div>'
-        '<div class="risk-score">Score 0.25 – &lt; 0.60</div></div>',
+        "### Risk Levels"
+    )
+
+    st.markdown(
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="low-dot">●</span>&nbsp; Low Risk'
+        '</div>'
+        '<div class="risk-score">Score &lt; 0.25</div>'
+        '</div>',
         unsafe_allow_html=True
     )
 
     st.markdown(
-        '<div class="risk-item"><div class="risk-name">'
-        '<span class="high-dot">●</span>&nbsp; High Risk</div>'
-        '<div class="risk-score">Score ≥ 0.60</div></div>',
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="medium-dot">●</span>&nbsp; Medium Risk'
+        '</div>'
+        '<div class="risk-score">Score 0.25 – &lt; 0.60</div>'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="risk-item">'
+        '<div class="risk-name">'
+        '<span class="high-dot">●</span>&nbsp; High Risk'
+        '</div>'
+        '<div class="risk-score">Score ≥ 0.60</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="custom-divider"></div>',
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         '<div style="font-size:14px;color:#315878;margin-top:20px;">'
@@ -531,7 +796,9 @@ with st.sidebar:
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">🚦 Road Accident Risk Prediction</div>',
+    '<div class="main-title">'
+    '🚦 Road Accident Risk Prediction'
+    '</div>',
     unsafe_allow_html=True
 )
 
@@ -548,10 +815,21 @@ st.markdown(
 # ============================================================
 
 try:
-    model, encoder, scaler = load_model_and_preprocessing()
+
+    model, encoder, scaler = (
+        load_model_and_preprocessing()
+    )
+
 except Exception as e:
-    st.error("Unable to load the trained model or preprocessing files.")
-    st.code(str(e))
+
+    st.error(
+        "Unable to load the trained model or preprocessing files."
+    )
+
+    st.code(
+        str(e)
+    )
+
     st.stop()
 
 
@@ -564,62 +842,170 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
+# ============================================================
+# ROW 1
+# ============================================================
+
 col1, col2, col3 = st.columns(3)
 
+
 with col1:
+
     city = st.selectbox(
         "City",
-        ["Bangalore", "Chandigarh", "Chennai", "Delhi",
-         "Hyderabad", "Kolkata", "Mumbai", "Pune"]
+        [
+            "Bangalore",
+            "Chandigarh",
+            "Chennai",
+            "Delhi",
+            "Hyderabad",
+            "Kolkata",
+            "Mumbai",
+            "Pune"
+        ]
     )
 
+
 with col2:
-    road_type = st.selectbox("Road Type", ["highway", "rural", "urban"])
+
+    road_type = st.selectbox(
+        "Road Type",
+        [
+            "highway",
+            "rural",
+            "urban"
+        ]
+    )
+
 
 with col3:
-    weather = st.selectbox("Weather", ["clear", "fog", "rain"])
 
+    weather = st.selectbox(
+        "Weather",
+        [
+            "clear",
+            "fog",
+            "rain"
+        ]
+    )
+
+
+# ============================================================
+# ROW 2
+# ============================================================
 
 col4, col5, col6 = st.columns(3)
 
+
 with col4:
-    visibility = st.selectbox("Visibility", ["high", "low", "medium"])
+
+    visibility = st.selectbox(
+        "Visibility",
+        [
+            "high",
+            "low",
+            "medium"
+        ]
+    )
+
 
 with col5:
+
     traffic_density = st.selectbox(
-        "Traffic Density", ["high", "low", "medium"]
+        "Traffic Density",
+        [
+            "high",
+            "low",
+            "medium"
+        ]
     )
+
 
 with col6:
+
     selected_date = st.date_input(
-        "Date", value=datetime.now().date()
+        "Date",
+        value=datetime.now().date()
     )
 
 
-selected_date_timestamp = pd.to_datetime(selected_date)
-day_of_week = selected_date_timestamp.strftime("%A")
-is_weekend = int(selected_date_timestamp.weekday() >= 5)
+# ============================================================
+# DAY OF WEEK
+# ============================================================
 
+selected_date_timestamp = pd.to_datetime(
+    selected_date
+)
+
+day_of_week = (
+    selected_date_timestamp.strftime("%A")
+)
+
+
+# ============================================================
+# AUTOMATIC WEEKEND
+# ============================================================
+
+is_weekend = (
+    1
+    if selected_date_timestamp.weekday() >= 5
+    else 0
+)
+
+
+# ============================================================
+# ROW 3
+# ============================================================
 
 col7, col8, col9 = st.columns(3)
 
+
 with col7:
-    now = datetime.now()
+
     selected_time = st.time_input(
         "Time",
-        value=time(now.hour, now.minute)
+        value=time(
+            datetime.now().hour,
+            datetime.now().minute
+        )
     )
 
-is_peak_hour = calculate_peak_hour(selected_time.hour)
 
-weekend_text = "Yes" if is_weekend else "No"
-peak_text = "Yes" if is_peak_hour else "No"
+# ============================================================
+# AUTOMATIC PEAK HOUR
+# ============================================================
+
+is_peak_hour = calculate_peak_hour(
+    selected_time.hour
+)
+
+
+# ============================================================
+# SUMMARY TEXT
+# ============================================================
+
+weekend_text = (
+    "Yes"
+    if is_weekend == 1
+    else "No"
+)
+
+peak_text = (
+    "Yes"
+    if is_peak_hour == 1
+    else "No"
+)
 
 summary_text = (
-    f"📅 {selected_date.strftime('%Y-%m-%d')} &nbsp; | &nbsp; "
-    f"📅 {day_of_week} &nbsp; | &nbsp; "
-    f"🕐 {selected_time.strftime('%H:%M')} &nbsp; | &nbsp; "
-    f"Weekend: <b>{weekend_text}</b> &nbsp; | &nbsp; "
+    f"📅 {selected_date.strftime('%Y-%m-%d')} "
+    f"&nbsp; | &nbsp; "
+    f"📅 {day_of_week} "
+    f"&nbsp; | &nbsp; "
+    f"🕐 {selected_time.strftime('%H:%M')} "
+    f"&nbsp; | &nbsp; "
+    f"Weekend: <b>{weekend_text}</b> "
+    f"&nbsp; | &nbsp; "
     f"Peak Hour: <b>{peak_text}</b>"
 )
 
@@ -635,7 +1021,7 @@ st.markdown(
 
 predict_button = st.button(
     "🚗 Predict Accident Risk",
-    use_container_width=True
+    width="stretch"
 )
 
 
@@ -644,7 +1030,13 @@ predict_button = st.button(
 # ============================================================
 
 if predict_button:
+
     try:
+
+        # ----------------------------------------------------
+        # PREPROCESS
+        # ----------------------------------------------------
+
         processed_input = preprocess_input(
             city=city,
             road_type=road_type,
@@ -660,26 +1052,65 @@ if predict_button:
             scaler=scaler
         )
 
-        risk_score = predict_risk(model, processed_input)
-        risk_category = get_risk_category(risk_score)
+
+        # ----------------------------------------------------
+        # PREDICT
+        # ----------------------------------------------------
+
+        risk_score = predict_risk(
+            model,
+            processed_input
+        )
+
+
+        # ----------------------------------------------------
+        # CATEGORY
+        # ----------------------------------------------------
+
+        risk_category = get_risk_category(
+            risk_score
+        )
+
+
+        # ----------------------------------------------------
+        # RESULT
+        # ----------------------------------------------------
 
         st.markdown(
             '<div class="section-title">Prediction Result</div>',
             unsafe_allow_html=True
         )
 
-        category_class = {
-            "Low Risk": "low-risk",
-            "Medium Risk": "medium-risk",
-            "High Risk": "high-risk"
-        }[risk_category]
+
+        if risk_category == "Low Risk":
+
+            category_class = "low-risk"
+
+        elif risk_category == "Medium Risk":
+
+            category_class = "medium-risk"
+
+        else:
+
+            category_class = "high-risk"
+
+
+        result_html = (
+            f'<div class="result-card">'
+            f'<div class="result-title">'
+            f'Predicted Risk Score'
+            f'</div>'
+            f'<div class="score">'
+            f'{risk_score:.4f}'
+            f'</div>'
+            f'<div class="{category_class}">'
+            f'{risk_category}'
+            f'</div>'
+            f'</div>'
+        )
 
         st.markdown(
-            f'<div class="result-card">'
-            f'<div class="result-title">Predicted Risk Score</div>'
-            f'<div class="score">{risk_score:.4f}</div>'
-            f'<div class="{category_class}">{risk_category}</div>'
-            f'</div>',
+            result_html,
             unsafe_allow_html=True
         )
 
@@ -695,27 +1126,41 @@ if predict_button:
 
         summary_col1, summary_col2 = st.columns(2)
 
+
         with summary_col1:
-            st.markdown(
+
+            left_summary = (
                 f'<div class="info-card">'
                 f'<b>City:</b> {city}<br><br>'
                 f'<b>Road Type:</b> {road_type}<br><br>'
                 f'<b>Weather:</b> {weather}<br><br>'
                 f'<b>Visibility:</b> {visibility}<br><br>'
                 f'<b>Traffic Density:</b> {traffic_density}'
-                f'</div>',
+                f'</div>'
+            )
+
+            st.markdown(
+                left_summary,
                 unsafe_allow_html=True
             )
 
+
         with summary_col2:
-            st.markdown(
+
+            right_summary = (
                 f'<div class="info-card">'
-                f'<b>Date:</b> {selected_date.strftime("%Y-%m-%d")}<br><br>'
+                f'<b>Date:</b> '
+                f'{selected_date.strftime("%Y-%m-%d")}<br><br>'
                 f'<b>Day:</b> {day_of_week}<br><br>'
-                f'<b>Time:</b> {selected_time.strftime("%H:%M")}<br><br>'
+                f'<b>Time:</b> '
+                f'{selected_time.strftime("%H:%M")}<br><br>'
                 f'<b>Weekend:</b> {weekend_text}<br><br>'
                 f'<b>Peak Hour:</b> {peak_text}'
-                f'</div>',
+                f'</div>'
+            )
+
+            st.markdown(
+                right_summary,
                 unsafe_allow_html=True
             )
 
@@ -737,72 +1182,140 @@ if predict_button:
             unsafe_allow_html=True
         )
 
-        with st.spinner("Generating explanation..."):
-            explainer = create_shap_explainer(model)
-            shap_values = calculate_shap_values(
-                explainer, processed_input
+
+        # ====================================================
+        # SHAP EXPLANATION
+        # ====================================================
+
+        with st.spinner(
+            "Generating explanation..."
+        ):
+
+            explainer = create_shap_explainer(
+                model
             )
 
+            shap_values = calculate_shap_values(
+                explainer,
+                processed_input
+            )
+
+
         if shap_values is not None:
-            feature_names = get_feature_names(encoder)
+
+            feature_names = get_feature_names(
+                encoder
+            )
+
             values = shap_values[0]
 
             if len(feature_names) == len(values):
-                shap_df = pd.DataFrame({
-                    "Feature": feature_names,
-                    "SHAP Value": values,
-                    "Absolute Impact": np.abs(values)
-                }).sort_values("Absolute Impact", ascending=False)
 
-                top_features = (
-                    shap_df.head(10)
-                    .sort_values("Absolute Impact", ascending=True)
+                shap_df = pd.DataFrame(
+                    {
+                        "Feature": feature_names,
+                        "SHAP Value": values,
+                        "Absolute Impact": np.abs(values)
+                    }
                 )
 
-                fig, ax = plt.subplots(figsize=(9, 5))
+                shap_df = shap_df.sort_values(
+                    "Absolute Impact",
+                    ascending=False
+                )
+
+
+                top_features = (
+                    shap_df
+                    .head(10)
+                    .sort_values(
+                        "Absolute Impact",
+                        ascending=True
+                    )
+                )
+
+
+                # ------------------------------------------------
+                # SHAP CHART
+                # ------------------------------------------------
+
+                fig, ax = plt.subplots(
+                    figsize=(9, 5)
+                )
+
                 ax.barh(
                     top_features["Feature"],
                     top_features["SHAP Value"]
                 )
-                ax.set_xlabel("SHAP Value")
-                ax.set_ylabel("Feature")
-                ax.set_title("Top Features Contributing to Risk Prediction")
+
+                ax.set_xlabel(
+                    "SHAP Value"
+                )
+
+                ax.set_ylabel(
+                    "Feature"
+                )
+
+                ax.set_title(
+                    "Top Features Contributing to Risk Prediction"
+                )
+
                 plt.tight_layout()
-                st.pyplot(fig, use_container_width=True)
+
+                st.pyplot(
+                    fig,
+                    width="stretch"
+                )
+
                 plt.close(fig)
+
+
+                # ------------------------------------------------
+                # SHAP TABLE
+                # ------------------------------------------------
 
                 st.markdown(
                     '<div class="info-card">'
-                    '<b>Feature Contribution Details</b></div>',
+                    '<b>Feature Contribution Details</b>'
+                    '</div>',
                     unsafe_allow_html=True
                 )
 
-                display_df = shap_df.head(10)[
-                    ["Feature", "SHAP Value"]
-                ].copy()
+                display_df = (
+                    shap_df
+                    .head(10)
+                    [["Feature", "SHAP Value"]]
+                    .copy()
+                )
+
                 display_df["SHAP Value"] = (
-                    display_df["SHAP Value"].round(4)
+                    display_df["SHAP Value"]
+                    .round(4)
                 )
 
                 st.dataframe(
                     display_df,
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True
                 )
+
             else:
+
                 st.warning(
-                    "SHAP feature names do not match the model input size. "
-                    "Check the model's original training feature list."
+                    "SHAP feature names do not match "
+                    "the model input size."
                 )
+
         else:
+
             st.info(
-                "Prediction was generated successfully, but SHAP "
-                "explanation could not be generated."
+                "Prediction was generated successfully, "
+                "but SHAP explanation could not be generated."
             )
 
 
         # ====================================================
-        # MODEL PERFORMANCE — UPDATED
+        # MODEL PERFORMANCE
         # ====================================================
 
         st.markdown(
@@ -810,33 +1323,51 @@ if predict_button:
             unsafe_allow_html=True
         )
 
-        performance_col1, performance_col2, performance_col3, performance_col4 = (
-            st.columns(4)
-        )
+        performance_col1, performance_col2, performance_col3, performance_col4 = st.columns(4)
+
 
         with performance_col1:
-            st.metric("MAE", f"{BEST_MODEL_MAE:.4f}")
+
+            st.metric(
+                "MAE",
+                f"{BEST_MODEL_MAE:.4f}"
+            )
+
 
         with performance_col2:
-            st.metric("RMSE", f"{BEST_MODEL_RMSE:.4f}")
+
+            st.metric(
+                "RMSE",
+                f"{BEST_MODEL_RMSE:.4f}"
+            )
+
 
         with performance_col3:
-            st.metric("R² Score", f"{BEST_MODEL_R2:.4f}")
+
+            st.metric(
+                "R² Score",
+                f"{BEST_MODEL_R2:.4f}"
+            )
+
 
         with performance_col4:
-            actual_parameters = model.count_params()
-            st.metric("Parameters", f"{actual_parameters:,}")
+
+            st.metric(
+                "Parameters",
+                f"{BEST_MODEL_PARAMETERS:,}"
+            )
+
 
         st.markdown(
             f'<div class="info-card">'
             f'<b>Selected Model:</b> {BEST_MODEL_NAME}<br><br>'
-            f'<b>Test R²:</b> {BEST_MODEL_R2:.4f}<br><br>'
-            f'<b>Architecture:</b> {model.input_shape[-1]} → '
-            f'32 → 16 → 8 → 1<br><br>'
+            f'<b>Training Time:</b> '
+            f'{BEST_MODEL_TRAINING_TIME:.2f} seconds<br><br>'
+            f'<b>Architecture:</b> '
+            f'35 → 64 → 32 → 16 → 1<br><br>'
             f'<b>Optimizer:</b> Adam<br>'
             f'<b>Loss:</b> Mean Squared Error (MSE)<br>'
-            f'<b>Note:</b> Metrics shown are from the recorded '
-            f'evaluation experiment.'
+            f'<b>Regularization:</b> 20% Dropout'
             f'</div>',
             unsafe_allow_html=True
         )
@@ -846,35 +1377,80 @@ if predict_button:
         # MODEL INFORMATION
         # ====================================================
 
-        with st.expander("Model and preprocessing information"):
-            st.write("Selected model:", BEST_MODEL_NAME)
-            st.write("Model parameters:", f"{model.count_params():,}")
-            st.write("Model input shape:", model.input_shape)
-            st.write("Processed feature count:", processed_input.shape[1])
+        with st.expander(
+            "Model and preprocessing information"
+        ):
+
+            st.write(
+                "Selected model:",
+                BEST_MODEL_NAME
+            )
+
+            st.write(
+                "Model parameters:",
+                f"{BEST_MODEL_PARAMETERS:,}"
+            )
+
+            st.write(
+                "Processed feature count:",
+                processed_input.shape[1]
+            )
+
             st.write(
                 "Encoded categorical features:",
-                len(encoder.get_feature_names_out(categorical_features))
+                len(
+                    encoder.get_feature_names_out(
+                        categorical_features
+                    )
+                )
             )
-            st.write("Numerical features:", len(numerical_features))
+
+            st.write(
+                "Numerical features:",
+                len(numerical_features)
+            )
+
+            st.write(
+                "Total model input features:",
+                processed_input.shape[1]
+            )
+
             st.write(
                 "Prediction method:",
                 "Deep Learning model.predict()"
             )
-            st.write("Explainability method:", "SHAP DeepExplainer")
+
+            st.write(
+                "Explainability method:",
+                "SHAP DeepExplainer"
+            )
+
+
+        # ====================================================
+        # DISCLAIMER
+        # ====================================================
 
         st.markdown(
             '<div class="info-card">'
-            '<b>Note:</b> This application estimates accident risk '
-            'based on the provided road, traffic, weather, visibility '
-            'and time-related conditions. The prediction is an estimate '
-            'and does not guarantee that an accident will or will not occur.'
+            '<b>Note:</b> This application estimates accident '
+            'risk based on the provided road, traffic, weather, '
+            'visibility and time-related conditions. '
+            'The prediction is an estimate and does not guarantee '
+            'that an accident will or will not occur.'
             '</div>',
             unsafe_allow_html=True
         )
 
+
     except Exception as e:
-        st.error("Prediction could not be completed.")
-        st.code(str(e))
+
+        st.error(
+            "Prediction could not be completed."
+        )
+
+        st.code(
+            str(e)
+        )
 
 
 # ============================================================
@@ -884,7 +1460,8 @@ if predict_button:
 st.markdown(
     '<div class="footer-text">'
     'DL-Based Road Accident Risk Prediction '
-    '&nbsp; | &nbsp; Deep Learning + Explainable AI'
+    '&nbsp; | &nbsp; '
+    'Deep Learning + Explainable AI'
     '</div>',
     unsafe_allow_html=True
-)
+)  give updated code dont change file names they are already updated

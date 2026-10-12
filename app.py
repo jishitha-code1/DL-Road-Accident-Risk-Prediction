@@ -1391,11 +1391,12 @@ if uploaded_road_image is not None:
             with st.spinner("Analyzing the road image..."):
                 damage_model = load_damage_model()
                 detection_result = damage_model.predict(
-                    source=road_image,
-                    conf=damage_confidence,
-                    verbose=False
-                )[0]
-
+    source=road_image,
+    conf=damage_confidence,
+    device="cpu",
+    imgsz=640,
+    verbose=False
+)[0]
             # Ultralytics plot() returns BGR; convert it to RGB for Streamlit.
             annotated_bgr = detection_result.plot()
             annotated_rgb = annotated_bgr[:, :, ::-1]

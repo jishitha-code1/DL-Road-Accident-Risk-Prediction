@@ -10,7 +10,7 @@ import joblib
 import tensorflow as tf
 import shap
 import matplotlib.pyplot as plt
-from ultralytics import YOLO
+#from ultralytics import YOLO
 from PIL import Image
 from pathlib import Path
 from datetime import datetime, time
@@ -42,15 +42,15 @@ DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
 
 
 
-@st.cache_resource
-def load_damage_model():
-    """Load the YOLO road-damage detector once per Streamlit session."""
-    if not DAMAGE_MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
-            "Place best.pt inside the project's models folder."
-        )
-    return YOLO(str(DAMAGE_MODEL_PATH))
+#@st.cache_resource
+#def load_damage_model():
+    #"""Load the YOLO road-damage detector once per Streamlit session."""
+    #if not DAMAGE_MODEL_PATH.exists():
+        #raise FileNotFoundError(
+            #f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
+            #"Place best.pt inside the project's models folder."
+        #)
+    #return YOLO(str(DAMAGE_MODEL_PATH))
 
 
 # ============================================================

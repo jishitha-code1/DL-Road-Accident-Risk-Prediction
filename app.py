@@ -760,6 +760,345 @@ except Exception:
             st.error("Road-damage detection could not be completed.")
             st.exception(exc)
 
+
+# ---------------------------------------------------------------------
+# Image-only integrated risk analysis: potholes + weather + traffic
+# ---------------------------------------------------------------------
+st.divider()
+st.markdown(
+    '<div class="section-title">Image-Based Integrated Accident Risk</div>',
+    unsafe_allow_html=True,
+)
+st.write(
+    "Upload one road image. The app detects potholes with your trained best.pt, "
+    "estimates visible weather with an image classifier, detects vehicles with a "
+    "pretrained COCO detector, and passes the inferred conditions to your existing "
+    "risk model."
+)
+st.info(
+    "The weather and vehicle models are separate pretrained models. On first use, "
+    "they may need internet access to download their weights. The combined score "
+    "is an experimental estimate, not a calibrated accident probability."
+)
+
+integrated_image_file = st.file_uploader(
+    "Upload one road image for all-in-one analysis",
+    type=["jpg", "jpeg", "png"],
+    key="integrated_road_image_uploader",
+)
+
+if integrated_image_file is not None:
+    try:
+        integrated_image = Image.open(integrated_image_file).convert("RGB")
+        st.image(integrated_image, caption="Image to analyze", width="stretch")
+    except Exception as exc:
+        integrated_image = None
+        st.error("The uploaded image could not be opened.")
+        st.code(f"{type(exc).__name__}: {exc}")
+else:
+    integrated_image = None
+
+if st.button("Analyze Image and Predict Risk", key="integrated_image_risk_button"):
+    if integrated_image is None:
+        st.error("Please upload a valid road image first.")
+    elif not DAMAGE_MODEL_PATH.is_file():
+        st.error(f"Pothole detector weights were not found: {DAMAGE_MODEL_PATH}")
+        st.info("Place best.pt inside the models folder.")
+    else:
+        try:
+            with tempfile.TemporaryDirectory(prefix="integrated_road_risk_") as temp_dir:
+                temp_path = Path(temp_dir)
+                input_path = temp_path / "input.png"
+                pothole_output_path = temp_path / "potholes.png"
+                vehicle_output_path = temp_path / "vehicles.png"
+                metadata_path = temp_path / "analysis.json"
+                integrated_image.save(input_path, format="PNG")
+
+                integrated_worker = r"""
+import json, os, sys, traceback
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+input_path, pothole_weights, pothole_output, vehicle_output, metadata_path = sys.argv[1:6]
+
+try:
+    import torch
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass
+
+    import numpy as np
+    from PIL import Image
+    from ultralytics import YOLO
+
+    image = Image.open(input_path).convert("RGB")
+
+    # 1) User's own fine-tuned pothole detector.
+    pothole_model = YOLO(pothole_weights)
+    pothole_result = pothole_model.predict(
+        source=input_path, conf=0.25, device="cpu", imgsz=640,
+        batch=1, half=False, workers=0, verbose=False
+    )[0]
+    Image.fromarray(pothole_result.plot()[..., ::-1].copy()).save(pothole_output)
+
+    pothole_names = pothole_model.names
+    potholes = []
+    if pothole_result.boxes is not None:
+        for box in pothole_result.boxes:
+            cls_id = int(box.cls[0].item())
+            cls_name = (pothole_names.get(cls_id, str(cls_id))
+                        if isinstance(pothole_names, dict)
+                        else pothole_names[cls_id])
+            potholes.append({
+                "class": str(cls_name),
+                "confidence": float(box.conf[0].item())
+            })
+
+    # 2) Vehicle detector: pretrained COCO YOLOv8n. It downloads yolov8n.pt
+    # on first run if the weights are not already cached.
+    vehicle_model = YOLO("yolov8n.pt")
+    vehicle_result = vehicle_model.predict(
+        source=input_path, conf=0.25, device="cpu", imgsz=640,
+        batch=1, half=False, workers=0, verbose=False
+    )[0]
+    Image.fromarray(vehicle_result.plot()[..., ::-1].copy()).save(vehicle_output)
+
+    vehicle_classes = {"car", "motorcycle", "bus", "truck"}
+    vehicle_counts = {}
+    if vehicle_result.boxes is not None:
+        names = vehicle_model.names
+        for box in vehicle_result.boxes:
+            cls_id = int(box.cls[0].item())
+            cls_name = (names.get(cls_id, str(cls_id))
+                        if isinstance(names, dict) else names[cls_id])
+            cls_name = str(cls_name).lower()
+            if cls_name in vehicle_classes:
+                vehicle_counts[cls_name] = vehicle_counts.get(cls_name, 0) + 1
+
+    # 3) Zero-shot weather classification with CLIP. The labels describe
+    # visible image appearance; this cannot prove current weather.
+    from transformers import pipeline
+    weather_classifier = pipeline(
+        task="zero-shot-image-classification",
+        model="openai/clip-vit-base-patch32",
+        device=-1
+    )
+    weather_candidates = [
+        "a road scene in rainy weather with rain and wet road",
+        "a road scene in foggy weather with poor visibility",
+        "a road scene in clear sunny weather",
+        "a road scene in cloudy overcast weather"
+    ]
+    weather_result = weather_classifier(image, candidate_labels=weather_candidates)
+    best_weather = weather_result[0]
+    label = str(best_weather["label"]).lower()
+    if "rainy" in label:
+        weather = "rain"
+    elif "foggy" in label:
+        weather = "fog"
+    else:
+        # Existing risk model supports clear/fog/rain; cloudy is mapped to clear
+        # because the trained model does not expose a cloudy category.
+        weather = "clear"
+
+    vehicle_total = int(sum(vehicle_counts.values()))
+    # This is a rough single-image density proxy, not a traffic-flow measure.
+    if vehicle_total <= 2:
+        traffic_density = "low"
+    elif vehicle_total <= 6:
+        traffic_density = "medium"
+    else:
+        traffic_density = "high"
+
+    # Infer visibility only from visible scene/weather cues.
+    visibility = "low" if weather == "fog" else ("medium" if weather == "rain" else "high")
+
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "potholes": potholes,
+            "vehicle_counts": vehicle_counts,
+            "vehicle_total": vehicle_total,
+            "traffic_density": traffic_density,
+            "weather": weather,
+            "weather_label": str(best_weather["label"]),
+            "weather_confidence": float(best_weather["score"]),
+            "visibility": visibility
+        }, f)
+except Exception:
+    traceback.print_exc()
+    sys.exit(2)
+"""
+                st.info(
+                    "Analyzing potholes, visible weather, and vehicles in an isolated CPU process..."
+                )
+                with st.spinner(
+                    "Running image analysis. First-time model downloads may take several minutes..."
+                ):
+                    completed = subprocess.run(
+                        [
+                            sys.executable, "-c", integrated_worker,
+                            str(input_path), str(DAMAGE_MODEL_PATH),
+                            str(pothole_output_path), str(vehicle_output_path),
+                            str(metadata_path),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=600,
+                        env={
+                            **os.environ,
+                            "CUDA_VISIBLE_DEVICES": "-1",
+                            "OMP_NUM_THREADS": "1",
+                            "OPENBLAS_NUM_THREADS": "1",
+                            "MKL_NUM_THREADS": "1",
+                            "NUMEXPR_NUM_THREADS": "1",
+                            "TOKENIZERS_PARALLELISM": "false",
+                        },
+                    )
+
+                if completed.returncode != 0:
+                    st.error("Image analysis failed. The main Streamlit app remains protected.")
+                    if completed.returncode < 0:
+                        st.warning(
+                            f"The analysis worker terminated with signal {-completed.returncode}; "
+                            "this may indicate a native-library crash or memory limit."
+                        )
+                    st.code((completed.stderr or completed.stdout or "No diagnostics returned.")[-9000:])
+                elif not metadata_path.is_file():
+                    st.error("Image analysis finished without metadata output.")
+                    st.code((completed.stderr or "No diagnostics returned.")[-9000:])
+                else:
+                    with metadata_path.open("r", encoding="utf-8") as f:
+                        analysis = json.load(f)
+
+                    potholes = analysis.get("potholes", [])
+                    pothole_count = len(potholes)
+                    vehicle_counts = analysis.get("vehicle_counts", {})
+                    vehicle_total = int(analysis.get("vehicle_total", 0))
+                    inferred_weather = analysis["weather"]
+                    inferred_visibility = analysis["visibility"]
+                    inferred_traffic = analysis["traffic_density"]
+
+                    st.markdown("### Image analysis")
+                    img_col1, img_col2 = st.columns(2)
+                    with img_col1:
+                        st.markdown("**Pothole detection**")
+                        if pothole_output_path.is_file():
+                            st.image(str(pothole_output_path), width="stretch")
+                        st.metric("Pothole detections", pothole_count)
+                    with img_col2:
+                        st.markdown("**Vehicle detection**")
+                        if vehicle_output_path.is_file():
+                            st.image(str(vehicle_output_path), width="stretch")
+                        st.metric("Visible vehicles", vehicle_total)
+
+                    st.markdown("### Automatically inferred conditions")
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Weather", inferred_weather.title())
+                    m2.metric("Traffic", inferred_traffic.title())
+                    m3.metric("Visibility", inferred_visibility.title())
+                    m4.metric("Potholes", pothole_count)
+
+                    if vehicle_counts:
+                        st.write("Vehicle counts:", vehicle_counts)
+                    st.caption(
+                        "Weather estimate: "
+                        f"{analysis.get('weather_label', 'unknown')} "
+                        f"(classifier confidence {analysis.get('weather_confidence', 0.0):.1%}). "
+                        "A single image can misclassify weather and only shows visible vehicles."
+                    )
+
+                    # Use the existing trained risk model with inferred image features.
+                    # Current time is used because time cannot reliably be inferred from a still image.
+                    inference_time = datetime.now().time().replace(second=0, microsecond=0)
+                    image_processed_input = preprocess_input(
+                        weather=inferred_weather,
+                        visibility=inferred_visibility,
+                        traffic_density=inferred_traffic,
+                        selected_time=inference_time,
+                        is_peak_hour=calculate_peak_hour(inference_time.hour),
+                        preprocessor=preprocessor,
+                        expected_features=EXPECTED_FEATURES,
+                    )
+                    base_score = predict_risk(model, image_processed_input)
+
+                    # Potholes were not a trained input feature, so incorporate them as
+                    # a transparent experimental adjustment rather than pretending the
+                    # DNN learned their effect. Must be validated before scientific use.
+                    pothole_adjustment = (
+                        0.0 if pothole_count == 0
+                        else min(0.25, 0.10 + 0.04 * (pothole_count - 1))
+                    )
+                    combined_score = float(np.clip(
+                        base_score + pothole_adjustment * (1.0 - base_score), 0.0, 1.0
+                    ))
+                    combined_category = get_risk_category(combined_score)
+                    category_class = {
+                        "Low Risk": "low-risk",
+                        "Medium Risk": "medium-risk",
+                        "High Risk": "high-risk",
+                    }[combined_category]
+
+                    st.markdown("### Combined accident-risk estimate")
+                    st.markdown(
+                        f'<div class="result-card"><div class="result-title">'
+                        f'Image-Based Combined Risk Score</div>'
+                        f'<div class="score">{combined_score:.4f}</div>'
+                        f'<div class="{category_class}">{combined_category}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                    s1, s2, s3 = st.columns(3)
+                    s1.metric("DNN score from inferred conditions", f"{base_score:.4f}")
+                    s2.metric("Pothole adjustment", f"+{pothole_adjustment:.3f}")
+                    s3.metric("Vehicles counted", vehicle_total)
+
+                    st.markdown("### Why this risk was estimated")
+                    explanations = []
+                    if pothole_count:
+                        explanations.append(
+                            f"**Potholes:** {pothole_count} possible pothole(s) were detected, "
+                            "which may require drivers to brake or change direction."
+                        )
+                    else:
+                        explanations.append(
+                            "**Potholes:** no potholes were detected at the current detector threshold; "
+                            "this does not prove the road is damage-free."
+                        )
+                    explanations.append(
+                        f"**Weather:** the image classifier estimated **{inferred_weather}** conditions. "
+                        "Rain or fog may reduce traction or visibility."
+                    )
+                    explanations.append(
+                        f"**Traffic:** {vehicle_total} car/bus/truck/motorcycle instance(s) were visible, "
+                        f"mapped to **{inferred_traffic}** traffic density for this estimate."
+                    )
+                    explanations.append(
+                        f"**Time:** the model used the current time ({inference_time.strftime('%H:%M')}) "
+                        "because a single road image cannot reliably reveal the time of day."
+                    )
+                    for explanation in explanations:
+                        st.markdown(f"- {explanation}")
+
+                    st.warning(
+                        "Important research limitation: your existing DNN was trained on structured "
+                        "conditions, not raw images, and pothole count is not one of its trained inputs. "
+                        "The displayed combined score adds a hand-designed pothole adjustment; it is "
+                        "not a calibrated probability. Validate this method against labelled data before "
+                        "reporting it as an accurate accident-risk predictor."
+                    )
+
+        except subprocess.TimeoutExpired:
+            st.error("Image analysis exceeded the 10-minute limit. First-time model downloads may be the cause.")
+        except Exception as exc:
+            st.error("Image-based risk prediction could not be completed.")
+            st.exception(exc)
+
+
 # ---------------------------------------------------------------------
 # Footer
 # ---------------------------------------------------------------------

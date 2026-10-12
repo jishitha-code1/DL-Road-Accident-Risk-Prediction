@@ -6,7 +6,7 @@ scikit-learn==1.6.1
 joblib
 shap
 matplotlib
-dill
+dill 
 ultralytics-opencv-headless
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.6.0+cpu

@@ -1,160 +1,95 @@
-            f'<div class="result-card">'
-            f'<div class="result-title">'
-            f'Predicted Risk Score'
-            f'</div>'
-            f'<div class="score">'
-            f'{risk_score:.4f}'
-            f'</div>'
-            f'<div class="{category_class}">'
-            f'{risk_category}'
-            f'</div>'
-            f'</div>'
-        )
 
-        st.markdown(
-            result_html,
-            unsafe_allow_html=True
-        )
+import streamlit as st
+import pandas as pd
+import numpy as np
+import joblib
+import tensorflow as tf
+import shap
+import matplotlib.pyplot as plt
+
+from pathlib import Path
+from datetime import datetime, time
 
 
-        # ====================================================
-        # INPUT SUMMARY
-        # ====================================================
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
 
-        st.markdown(
-            '<div class="section-title">Input Summary</div>',
-            unsafe_allow_html=True
-        )
-
-        summary_col1, summary_col2 = st.columns(2)
-
-
-        with summary_col1:
-
-            left_summary = (
-                f'<div class="info-card">'
-                f'<b>City:</b> {city}<br><br>'
-                f'<b>Road Type:</b> {road_type}<br><br>'
-                f'<b>Weather:</b> {weather}<br><br>'
-                f'<b>Visibility:</b> {visibility}<br><br>'
-                f'<b>Traffic Density:</b> {traffic_density}'
-                f'</div>'
-            )
-
-            st.markdown(
-                left_summary,
-                unsafe_allow_html=True
-            )
+st.set_page_config(
+    page_title="Road Accident Risk Prediction",
+    page_icon="🚦",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 
-        with summary_col2:
+# ============================================================
+# PATHS
+# ============================================================
 
-            right_summary = (
-                f'<div class="info-card">'
-                f'<b>Date:</b> '
-                f'{selected_date.strftime("%Y-%m-%d")}<br><br>'
-                f'<b>Day:</b> {day_of_week}<br><br>'
-                f'<b>Time:</b> '
-                f'{selected_time.strftime("%H:%M")}<br><br>'
-                f'<b>Weekend:</b> {weekend_text}<br><br>'
-                f'<b>Peak Hour:</b> {peak_text}'
-                f'</div>'
-            )
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "models"
 
-            st.markdown(
-                right_summary,
-                unsafe_allow_html=True
-            )
+# NEW BEST MODEL FROM COLAB
+MODEL_PATH = MODEL_DIR / "improved_model.keras"
+PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
 
 
-        # ====================================================
-        # EXPLAINABLE AI
-        # ====================================================
+# ============================================================
+# CUSTOM CSS
+# ============================================================
 
-        st.markdown(
-            '<div class="section-title">Explainable AI</div>',
-            unsafe_allow_html=True
-        )
+st.markdown(
+    """
+<style>
 
-        st.markdown(
-            '<div class="info-card">'
-            'SHAP explains how the input features contributed '
-            'to the predicted risk score.'
-            '</div>',
-            unsafe_allow_html=True
-        )
+/* =========================================================
+   MAIN PAGE
+   ========================================================= */
 
+.stApp {
+    background-color: #ADD8E6;
+}
 
-        # ====================================================
-        # SHAP EXPLANATION
-        # ====================================================
+[data-testid="stAppViewContainer"] {
+    background-color: #ADD8E6;
+}
 
-        with st.spinner(
-            "Generating explanation..."
-        ):
+[data-testid="stMain"] {
+    background-color: #ADD8E6;
+}
 
-            explainer = create_shap_explainer(
-                model
-            )
-
-            shap_values = calculate_shap_values(
-                explainer,
-                processed_input
-            )
+.main .block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
 
 
-        if shap_values is not None:
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
-            feature_names = get_feature_names(preprocessor)
+[data-testid="stSidebar"] {
+    background-color: #EED9C4 !important;
+}
 
-            values = shap_values[0]
+[data-testid="stSidebar"] > div {
+    background-color: #EED9C4 !important;
+}
 
-            if len(feature_names) == len(values):
-
-                shap_df = pd.DataFrame(
-                    {
-                        "Feature": feature_names,
-                        "SHAP Value": values,
-                        "Absolute Impact": np.abs(values)
-                    }
-                )
-
-                shap_df = shap_df.sort_values(
-                    "Absolute Impact",
-                    ascending=False
-                )
+[data-testid="stSidebarContent"] {
+    background-color: #EED9C4 !important;
+}
 
 
-                top_features = (
-                    shap_df
-                    .head(10)
-                    .sort_values(
-                        "Absolute Impact",
-                        ascending=True
-                    )
-                )
+/* =========================================================
+   GENERAL TEXT
+   ========================================================= */
 
-
-                # ------------------------------------------------
-                # SHAP CHART
-                # ------------------------------------------------
-
-                fig, ax = plt.subplots(
-                    figsize=(9, 5)
-                )
-
-                ax.barh(
-                    top_features["Feature"],
-                    top_features["SHAP Value"]
-                )
-
-                ax.set_xlabel(
-                    "SHAP Value"
-                )
-
-                ax.set_ylabel(
-                    "Feature"
-                )
-
-                ax.set_title(
-                    "Top Features Contributing to Risk Prediction"
+h1,
+h2,
+h3,
+h4 {
+    color: #173F68 !important;
+}

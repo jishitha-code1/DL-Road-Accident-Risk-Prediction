@@ -7,7 +7,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 import shap 
 import matplotlib.pyplot as plt
-#from ultralytics import YOLO 
+from ultralytics import YOLO 
 from PIL import Image 
 
 from pathlib import Path
@@ -36,18 +36,18 @@ MODEL_DIR = BASE_DIR / "models"
 # NEW BEST MODEL FROM COLAB
 MODEL_PATH = MODEL_DIR / "improved_model (3).keras"
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
-#DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
+DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
 
 
-#@st.cache_resource
-#def load_damage_model():
- #   """Load the YOLO road-damage detector once per Streamlit session."""
-  #  if not DAMAGE_MODEL_PATH.exists():
-   #     raise FileNotFoundError(
-    #        f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
-     #       "Place best.pt inside the project's models folder."
-      #  )
-    #return YOLO(str(DAMAGE_MODEL_PATH))
+@st.cache_resource
+def load_damage_model():
+   """Load the YOLO road-damage detector once per Streamlit session."""
+  if not DAMAGE_MODEL_PATH.exists():
+     raise FileNotFoundError(
+        f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
+       "Place best.pt inside the project's models folder."
+  )
+return YOLO(str(DAMAGE_MODEL_PATH))
 
 
 # ============================================================

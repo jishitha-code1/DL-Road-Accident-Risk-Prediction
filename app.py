@@ -183,6 +183,7 @@ def load_damage_model():
         )
     # Avoid importing Ultralytics/PyTorch unless image detection is requested.
     from ultralytics import YOLO
+
     return YOLO(str(DAMAGE_MODEL_PATH))
 
 
@@ -198,16 +199,25 @@ def calculate_peak_hour(hour):
     return int(7 <= hour <= 10 or 17 <= hour <= 20)
 
 
-def preprocess_input(weather, visibility, traffic_density, selected_time,
-                     is_peak_hour, preprocessor, expected_features):
+def preprocess_input(
+    weather,
+    visibility,
+    traffic_density,
+    selected_time,
+    is_peak_hour,
+    preprocessor,
+    expected_features,
+):
     raw = pd.DataFrame(
-        [{
-            "visibility": str(visibility),
-            "traffic_density": str(traffic_density),
-            "is_peak_hour": int(is_peak_hour),
-            "weather": str(weather),
-            "hour": int(selected_time.hour),
-        }],
+        [
+            {
+                "visibility": str(visibility),
+                "traffic_density": str(traffic_density),
+                "is_peak_hour": int(is_peak_hour),
+                "weather": str(weather),
+                "hour": int(selected_time.hour),
+            }
+        ],
         columns=MODEL_FEATURES,
     )
 
@@ -338,35 +348,53 @@ except Exception as exc:
 # ---------------------------------------------------------------------
 # Input form: only run prediction when submitted
 # ---------------------------------------------------------------------
-st.markdown('<div class="section-title">Enter Road Conditions</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="section-title">Enter Road Conditions</div>',
+    unsafe_allow_html=True,
+)
 
 with st.form("risk_prediction_form"):
     c1, c2, c3 = st.columns(3)
+
     with c1:
         city = st.selectbox(
             "City (context only; not used by model)",
-            ["Bangalore", "Chandigarh", "Chennai", "Delhi",
-             "Hyderabad", "Kolkata", "Mumbai", "Pune"],
+            [
+                "Bangalore",
+                "Chandigarh",
+                "Chennai",
+                "Delhi",
+                "Hyderabad",
+                "Kolkata",
+                "Mumbai",
+                "Pune",
+            ],
         )
+
     with c2:
         road_type = st.selectbox(
             "Road Type (context only; not used by model)",
             ["highway", "rural", "urban"],
         )
+
     with c3:
         weather = st.selectbox("Weather", ["clear", "fog", "rain"])
 
     c4, c5, c6 = st.columns(3)
+
     with c4:
         visibility = st.selectbox("Visibility", ["high", "low", "medium"])
+
     with c5:
         traffic_density = st.selectbox(
             "Traffic Density", ["high", "low", "medium"]
         )
+
     with c6:
         selected_date = st.date_input("Date", value=datetime.now().date())
 
     c7, c8, c9 = st.columns(3)
+
     with c7:
         now = datetime.now()
         selected_time = st.time_input("Time", value=time(now.hour, now.minute))
@@ -382,7 +410,11 @@ with st.form("risk_prediction_form"):
         f"Time: {selected_time:%H:%M} | Weekend: {weekend_text} | "
         f"Peak hour: {peak_text}"
     )
-    submitted = st.form_submit_button("🚗 Predict Accident Risk", use_container_width=True)
+
+    submitted = st.form_submit_button(
+        "🚗 Predict Accident Risk",
+        use_container_width=True,
+    )
 
 
 if submitted:
@@ -396,15 +428,20 @@ if submitted:
             preprocessor=preprocessor,
             expected_features=EXPECTED_FEATURES,
         )
+
         risk_score = predict_risk(model, processed_input)
         risk_category = get_risk_category(risk_score)
+
         category_class = {
             "Low Risk": "low-risk",
             "Medium Risk": "medium-risk",
             "High Risk": "high-risk",
         }[risk_category]
 
-        st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">Prediction Result</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown(
             f'<div class="result-card"><div class="result-title">Predicted Risk Score</div>'
             f'<div class="score">{risk_score:.4f}</div>'
@@ -412,8 +449,13 @@ if submitted:
             unsafe_allow_html=True,
         )
 
-        st.markdown('<div class="section-title">Input Summary</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">Input Summary</div>',
+            unsafe_allow_html=True,
+        )
+
         left, right = st.columns(2)
+
         with left:
             st.markdown(
                 f'<div class="info-card"><b>City:</b> {city}<br><br>'
@@ -423,6 +465,7 @@ if submitted:
                 f'<b>Traffic density:</b> {traffic_density}</div>',
                 unsafe_allow_html=True,
             )
+
         with right:
             st.markdown(
                 f'<div class="info-card"><b>Date:</b> {selected_date:%Y-%m-%d}<br><br>'
@@ -433,21 +476,27 @@ if submitted:
                 unsafe_allow_html=True,
             )
 
-        st.markdown('<div class="section-title">Explainable AI</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">Explainable AI</div>',
+            unsafe_allow_html=True,
+        )
         st.write(
             "SHAP estimates how transformed input features contribute to this model's output. "
             "These are model explanations, not proof of causation."
         )
+
         with st.spinner("Attempting to generate a SHAP explanation..."):
             feature_names, shap_values = make_shap_explanation(
                 model, processed_input, preprocessor, EXPECTED_FEATURES
             )
 
         if feature_names is not None and shap_values is not None:
-            shap_df = pd.DataFrame({
-                "Feature": feature_names,
-                "SHAP Value": np.asarray(shap_values, dtype=float),
-            })
+            shap_df = pd.DataFrame(
+                {
+                    "Feature": feature_names,
+                    "SHAP Value": np.asarray(shap_values, dtype=float),
+                }
+            )
             shap_df["Absolute Impact"] = shap_df["SHAP Value"].abs()
             shap_df = shap_df.sort_values("Absolute Impact", ascending=False)
             top = shap_df.head(10).sort_values("Absolute Impact", ascending=True)
@@ -469,12 +518,17 @@ if submitted:
                 "This does not affect the prediction."
             )
 
-        st.markdown('<div class="section-title">Model Performance</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">Model Performance</div>',
+            unsafe_allow_html=True,
+        )
+
         p1, p2, p3, p4 = st.columns(4)
         p1.metric("MAE", f"{BEST_MODEL_MAE:.4f}")
         p2.metric("RMSE", f"{BEST_MODEL_RMSE:.4f}")
         p3.metric("R² Score", f"{BEST_MODEL_R2:.4f}")
         p4.metric("Parameters", f"{BEST_MODEL_PARAMETERS:,}")
+
         st.markdown(
             f'<div class="info-card"><b>Selected model:</b> {BEST_MODEL_NAME}<br><br>'
             f'<b>Architecture reported for this model:</b> 11 → 32 → 16 → 8 → 1<br><br>'
@@ -482,6 +536,7 @@ if submitted:
             f'<b>Output activation:</b> Sigmoid</div>',
             unsafe_allow_html=True,
         )
+
         with st.expander("Model and preprocessing information"):
             st.write("Model input shape:", model.input_shape)
             st.write("Model output shape:", model.output_shape)
@@ -495,6 +550,7 @@ if submitted:
             "This is an experimental estimate based on entered conditions. "
             "It is not a calibrated probability and cannot guarantee whether an accident will occur."
         )
+
     except Exception as exc:
         st.error("Prediction could not be completed.")
         st.code(f"{type(exc).__name__}: {exc}")
@@ -504,7 +560,11 @@ if submitted:
 # Road damage detection: lazy-load YOLO only when the user requests it
 # ---------------------------------------------------------------------
 st.divider()
-st.markdown('<div class="section-title">Road Damage Detection from Image</div>', unsafe_allow_html=True)
+
+st.markdown(
+    '<div class="section-title">Road Damage Detection from Image</div>',
+    unsafe_allow_html=True,
+)
 st.write(
     "Upload a road image to identify visible damage patterns. This is separate "
     "from the parameter-based accident-risk score."
@@ -516,10 +576,18 @@ uploaded_image = st.file_uploader(
     key="road_damage_image_uploader",
 )
 
+# Initialize these variables on every Streamlit rerun.
+road_image = None
+confidence = 0.25
+
 if uploaded_image is not None:
     try:
         road_image = Image.open(uploaded_image).convert("RGB")
-        st.image(road_image, caption="Uploaded road image", use_container_width=True)
+        st.image(
+            road_image,
+            caption="Uploaded road image",
+            width="stretch",
+        )
 
         confidence = st.slider(
             "Detection confidence threshold",
@@ -531,21 +599,25 @@ if uploaded_image is not None:
             key="road_damage_confidence",
         )
 
-        
+    except Exception as exc:
+        road_image = None
+        st.error("The uploaded image could not be opened.")
+        st.code(f"{type(exc).__name__}: {exc}")
+
+
+# This button is outside the image-upload try block.
 if st.button("Detect Road Damage", key="detect_road_damage_button"):
     if road_image is None:
         st.error("Please upload a valid road image first.")
+
     else:
         try:
             st.info("Loading the road-damage detector...")
 
-            # Import only when detection is requested.
+            # Import PyTorch only when detection is requested.
             import torch
-            from ultralytics import YOLO
 
-            # Use CPU inference and limit PyTorch threads.
             torch.set_num_threads(1)
-
             damage_model = load_damage_model()
 
             st.info("Running road-damage detection on CPU...")
@@ -562,6 +634,7 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
                 )
 
             result = results[0]
+            # YOLO's plot() returns BGR; convert it to RGB for Streamlit.
             annotated_rgb = result.plot()[..., ::-1].copy()
 
             st.subheader("Detection Results")
@@ -578,21 +651,21 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
                     "No damage was detected at this confidence threshold. "
                     "This does not guarantee that the road has no damage."
                 )
+
             else:
                 st.success(
                     f"Detected {len(boxes)} possible road-damage instance(s)."
                 )
 
                 rows = []
+                class_names = damage_model.names
+
                 for box in boxes:
                     class_id = int(box.cls[0].item())
                     score = float(box.conf[0].item())
 
-                    class_names = damage_model.names
                     if isinstance(class_names, dict):
-                        class_name = class_names.get(
-                            class_id, str(class_id)
-                        )
+                        class_name = class_names.get(class_id, str(class_id))
                     else:
                         class_name = (
                             class_names[class_id]
@@ -600,10 +673,12 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
                             else str(class_id)
                         )
 
-                    rows.append({
-                        "Detected class": class_name,
-                        "Confidence": f"{score:.1%}",
-                    })
+                    rows.append(
+                        {
+                            "Detected class": class_name,
+                            "Confidence": f"{score:.1%}",
+                        }
+                    )
 
                 st.dataframe(
                     pd.DataFrame(rows),
@@ -620,12 +695,12 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
             st.error("Road-damage detection failed.")
             st.code(f"{type(exc).__name__}: {exc}")
 
-    except Exception as exc:
-        st.error("The uploaded image could not be opened.")
-        st.code(f"{type(exc).__name__}: {exc}")
 
-
+# ---------------------------------------------------------------------
+# Footer
+# ---------------------------------------------------------------------
 st.markdown(
-    '<div class="footer-text">DL-Based Road Accident Risk Prediction | Deep Learning + Explainable AI</div>',
+    '<div class="footer-text">DL-Based Road Accident Risk Prediction | '
+    'Deep Learning + Explainable AI</div>',
     unsafe_allow_html=True,
 )

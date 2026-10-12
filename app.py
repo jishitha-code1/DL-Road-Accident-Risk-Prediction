@@ -1372,7 +1372,7 @@ if uploaded_road_image is not None:
         st.image(
             road_image,
             caption="Uploaded road image",
-            use_container_width=True
+            width="stretch"
         )
 
         damage_confidence = st.slider(

@@ -887,6 +887,7 @@ try:
     weather_classifier = pipeline(
         task="zero-shot-image-classification",
         model="openai/clip-vit-base-patch32",
+        framework="pt",
         device=-1
     )
     weather_candidates = [

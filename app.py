@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -399,15 +398,6 @@ BEST_MODEL_RMSE = 0.0720
 BEST_MODEL_R2 = 0.8884
 
 
-# MODEL INFORMATION
-# ============================================================
-
-BEST_MODEL_NAME = "Model 2 - Improved DNN"
-BEST_MODEL_PARAMETERS = 4929
-
-BEST_MODEL_MAE = 0.04726163297891617
-BEST_MODEL_RMSE = 0.07603933074682204
-BEST_MODEL_R2 = 0.8755251939140223
 
 
 # ============================================================

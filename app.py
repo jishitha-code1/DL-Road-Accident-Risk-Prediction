@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
 # NEW BEST MODEL FROM COLAB
-MODEL_PATH = MODEL_DIR / "improved_model.keras"
+MODEL_PATH = MODEL_DIR / "improved_model (3).keras"
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
 
 

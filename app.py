@@ -5,6 +5,8 @@ import joblib
 import tensorflow as tf
 import shap
 import matplotlib.pyplot as plt
+from ultralytics import YOLO
+from PIL import Image
 
 from pathlib import Path
 from datetime import datetime, time 
@@ -32,6 +34,18 @@ MODEL_DIR = BASE_DIR / "models"
 # NEW BEST MODEL FROM COLAB
 MODEL_PATH = MODEL_DIR / "improved_model (3).keras"
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
+DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
+
+
+@st.cache_resource
+def load_damage_model():
+    """Load the YOLO road-damage detector once per Streamlit session."""
+    if not DAMAGE_MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
+            "Place best.pt inside the project's models folder."
+        )
+    return YOLO(str(DAMAGE_MODEL_PATH))
 
 
 # ============================================================
@@ -1327,6 +1341,104 @@ if predict_button:
         st.code(
             str(e)
         )
+
+
+# ============================================================
+# ROAD DAMAGE DETECTION (IMAGE UPLOAD)
+# ============================================================
+
+st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="section-title">Road Damage Detection from Image</div>',
+    unsafe_allow_html=True
+)
+st.write(
+    "Upload a road image to detect visible road-damage patterns. "
+    "This is a separate feature from the parameter-based accident-risk prediction above."
+)
+
+uploaded_road_image = st.file_uploader(
+    "Upload a road image",
+    type=["jpg", "jpeg", "png"],
+    key="road_damage_image_uploader"
+)
+
+if uploaded_road_image is not None:
+    try:
+        road_image = Image.open(uploaded_road_image).convert("RGB")
+        st.image(
+            road_image,
+            caption="Uploaded road image",
+            use_container_width=True
+        )
+
+        damage_confidence = st.slider(
+            "Detection confidence threshold",
+            min_value=0.10,
+            max_value=0.90,
+            value=0.25,
+            step=0.05,
+            help=(
+                "Lower thresholds show more candidate detections but may add false positives. "
+                "This setting does not guarantee a particular precision."
+            ),
+            key="road_damage_confidence"
+        )
+
+        if st.button("Detect Road Damage", key="detect_road_damage_button"):
+            with st.spinner("Analyzing the road image..."):
+                damage_model = load_damage_model()
+                detection_result = damage_model.predict(
+                    source=road_image,
+                    conf=damage_confidence,
+                    verbose=False
+                )[0]
+
+            # Ultralytics plot() returns BGR; convert it to RGB for Streamlit.
+            annotated_bgr = detection_result.plot()
+            annotated_rgb = annotated_bgr[:, :, ::-1]
+
+            st.subheader("Detection Results")
+            st.image(
+                annotated_rgb,
+                caption="Road-damage detections",
+                use_container_width=True
+            )
+
+            if len(detection_result.boxes) == 0:
+                st.info(
+                    "No damage was detected at this confidence threshold. "
+                    "This does not prove that the road has no damage. "
+                    "You can try a lower threshold to inspect candidate detections."
+                )
+            else:
+                st.success(
+                    f"Found {len(detection_result.boxes)} possible road-damage instance(s)."
+                )
+
+                detection_rows = []
+                for box in detection_result.boxes:
+                    class_id = int(box.cls[0].item())
+                    score = float(box.conf[0].item())
+                    detection_rows.append({
+                        "Detected class": damage_model.names[class_id],
+                        "Confidence": f"{score:.1%}"
+                    })
+
+                st.dataframe(
+                    pd.DataFrame(detection_rows),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+            st.caption(
+                "Model confidence is not the probability that an accident will occur. "
+                "Image-based detections do not directly calculate the accident-risk score."
+            )
+
+    except Exception as e:
+        st.error("Road-damage detection could not be completed.")
+        st.code(str(e))
 
 
 # ============================================================

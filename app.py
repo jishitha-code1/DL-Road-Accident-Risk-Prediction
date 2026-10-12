@@ -531,47 +531,95 @@ if uploaded_image is not None:
             key="road_damage_confidence",
         )
 
-        if st.button("Detect Road Damage", key="detect_road_damage_button"):
-            try:
-                with st.spinner("Analyzing the road image on CPU..."):
-                    damage_model = load_damage_model()
-                    result = damage_model.predict(
-                        source=road_image,
-                        conf=confidence,
-                        device="cpu",
-                        imgsz=640,
-                        verbose=False,
-                    )[0]
+        
+if st.button("Detect Road Damage", key="detect_road_damage_button"):
+    if road_image is None:
+        st.error("Please upload a valid road image first.")
+    else:
+        try:
+            st.info("Loading the road-damage detector...")
 
-                # Ultralytics returns BGR pixels; Streamlit expects RGB.
-                annotated_rgb = result.plot()[:, :, ::-1]
-                st.subheader("Detection Results")
-                st.image(annotated_rgb, caption="Road-damage detections", use_container_width=True)
+            # Import only when detection is requested.
+            import torch
+            from ultralytics import YOLO
 
-                boxes = result.boxes
-                if boxes is None or len(boxes) == 0:
-                    st.info(
-                        "No damage was detected at this threshold. This does not prove "
-                        "that the road has no damage."
-                    )
-                else:
-                    st.success(f"Found {len(boxes)} possible road-damage instance(s).")
-                    rows = []
-                    for box in boxes:
-                        class_id = int(box.cls[0].item())
-                        score = float(box.conf[0].item())
-                        rows.append({
-                            "Detected class": damage_model.names.get(class_id, str(class_id)),
-                            "Confidence": f"{score:.1%}",
-                        })
-                    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-                st.caption(
-                    "Detection confidence is not the probability of an accident. "
-                    "Image detections do not directly calculate the accident-risk score."
+            # Use CPU inference and limit PyTorch threads.
+            torch.set_num_threads(1)
+
+            damage_model = load_damage_model()
+
+            st.info("Running road-damage detection on CPU...")
+
+            with st.spinner("Analyzing image..."):
+                results = damage_model.predict(
+                    source=road_image,
+                    conf=float(confidence),
+                    device="cpu",
+                    imgsz=416,
+                    batch=1,
+                    half=False,
+                    verbose=False,
                 )
-            except Exception as exc:
-                st.error("Road-damage detection could not be completed.")
-                st.code(f"{type(exc).__name__}: {exc}")
+
+            result = results[0]
+            annotated_rgb = result.plot()[..., ::-1].copy()
+
+            st.subheader("Detection Results")
+            st.image(
+                annotated_rgb,
+                caption="Road-damage detections",
+                width="stretch",
+            )
+
+            boxes = result.boxes
+
+            if boxes is None or len(boxes) == 0:
+                st.info(
+                    "No damage was detected at this confidence threshold. "
+                    "This does not guarantee that the road has no damage."
+                )
+            else:
+                st.success(
+                    f"Detected {len(boxes)} possible road-damage instance(s)."
+                )
+
+                rows = []
+                for box in boxes:
+                    class_id = int(box.cls[0].item())
+                    score = float(box.conf[0].item())
+
+                    class_names = damage_model.names
+                    if isinstance(class_names, dict):
+                        class_name = class_names.get(
+                            class_id, str(class_id)
+                        )
+                    else:
+                        class_name = (
+                            class_names[class_id]
+                            if class_id < len(class_names)
+                            else str(class_id)
+                        )
+
+                    rows.append({
+                        "Detected class": class_name,
+                        "Confidence": f"{score:.1%}",
+                    })
+
+                st.dataframe(
+                    pd.DataFrame(rows),
+                    width="stretch",
+                    hide_index=True,
+                )
+
+            st.caption(
+                "Detection confidence is not the probability of an accident. "
+                "Image detection does not directly calculate the accident-risk score."
+            )
+
+        except Exception as exc:
+            st.error("Road-damage detection failed.")
+            st.code(f"{type(exc).__name__}: {exc}")
+
     except Exception as exc:
         st.error("The uploaded image could not be opened.")
         st.code(f"{type(exc).__name__}: {exc}")

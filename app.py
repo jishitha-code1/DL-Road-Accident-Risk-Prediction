@@ -46,8 +46,8 @@ def load_damage_model():
      raise FileNotFoundError(
         f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
        "Place best.pt inside the project's models folder."
-  )
-return YOLO(str(DAMAGE_MODEL_PATH))
+     )
+  return YOLO(str(DAMAGE_MODEL_PATH))
 
 
 # ============================================================

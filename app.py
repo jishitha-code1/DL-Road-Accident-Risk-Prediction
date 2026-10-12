@@ -606,15 +606,14 @@ if uploaded_image is not None:
 
 
 # This button is outside the image-upload try block.
+
 if st.button("Detect Road Damage", key="detect_road_damage_button"):
     if road_image is None:
         st.error("Please upload a valid road image first.")
-
     else:
         try:
             st.info("Loading the road-damage detector...")
 
-            # Import PyTorch only when detection is requested.
             import torch
 
             torch.set_num_threads(1)
@@ -622,17 +621,16 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
 
             st.info("Running road-damage detection on CPU...")
 
-           with st.spinner("Analyzing image..."):
-    results = damage_model(
-        source=road_image,
-        conf=float(confidence),
-        device="cpu",
-        imgsz=320,
-        verbose=False,
-    )
+            with st.spinner("Analyzing image..."):
+                results = damage_model(
+                    source=road_image,
+                    conf=float(confidence),
+                    device="cpu",
+                    imgsz=320,
+                    verbose=False,
+                )
 
             result = results[0]
-            # YOLO's plot() returns BGR; convert it to RGB for Streamlit.
             annotated_rgb = result.plot()[..., ::-1].copy()
 
             st.subheader("Detection Results")
@@ -649,7 +647,6 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
                     "No damage was detected at this confidence threshold. "
                     "This does not guarantee that the road has no damage."
                 )
-
             else:
                 st.success(
                     f"Detected {len(boxes)} possible road-damage instance(s)."
@@ -671,12 +668,10 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
                             else str(class_id)
                         )
 
-                    rows.append(
-                        {
-                            "Detected class": class_name,
-                            "Confidence": f"{score:.1%}",
-                        }
-                    )
+                    rows.append({
+                        "Detected class": class_name,
+                        "Confidence": f"{score:.1%}",
+                    })
 
                 st.dataframe(
                     pd.DataFrame(rows),

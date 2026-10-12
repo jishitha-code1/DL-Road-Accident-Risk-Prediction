@@ -623,13 +623,13 @@ if st.button("Detect Road Damage", key="detect_road_damage_button"):
             st.info("Running road-damage detection on CPU...")
 
            with st.spinner("Analyzing image..."):
-               results = damage_model(
-                   source=road_image,
-                   conf=float(confidence),
-                   device="cpu",
-                   imgsz=320,
-                   verbose=False,
-               )
+    results = damage_model(
+        source=road_image,
+        conf=float(confidence),
+        device="cpu",
+        imgsz=320,
+        verbose=False,
+    )
 
             result = results[0]
             # YOLO's plot() returns BGR; convert it to RGB for Streamlit.

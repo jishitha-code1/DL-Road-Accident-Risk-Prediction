@@ -12,6 +12,10 @@ os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
 
 from datetime import datetime, time
 from pathlib import Path
+import json
+import subprocess
+import sys
+import tempfile
 import warnings
 
 import joblib
@@ -413,7 +417,7 @@ with st.form("risk_prediction_form"):
 
     submitted = st.form_submit_button(
         "🚗 Predict Accident Risk",
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -506,12 +510,12 @@ if submitted:
             ax.set_xlabel("SHAP value (positive/negative contribution)")
             ax.set_title("Features Contributing to the Model Output")
             fig.tight_layout()
-            st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, width="stretch")
             plt.close(fig)
 
             display_df = shap_df.head(10)[["Feature", "SHAP Value"]].copy()
             display_df["SHAP Value"] = display_df["SHAP Value"].round(5)
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            st.dataframe(display_df, width="stretch", hide_index=True)
         else:
             st.info(
                 "The risk prediction succeeded, but SHAP could not be generated in this environment. "
@@ -605,89 +609,156 @@ if uploaded_image is not None:
         st.code(f"{type(exc).__name__}: {exc}")
 
 
-# This button is outside the image-upload try block.
-
+# Run YOLO in a separate Python process. If a native PyTorch/OpenCV library
+# segfaults, it will terminate the child process rather than the Streamlit app.
 if st.button("Detect Road Damage", key="detect_road_damage_button"):
     if road_image is None:
         st.error("Please upload a valid road image first.")
+    elif not DAMAGE_MODEL_PATH.is_file():
+        st.error(f"YOLO weights were not found: {DAMAGE_MODEL_PATH}")
+        st.info("Place best.pt inside the models folder.")
     else:
         try:
-            st.info("Loading the road-damage detector...")
+            with tempfile.TemporaryDirectory(prefix="road_damage_") as temp_dir:
+                temp_path = Path(temp_dir)
+                input_path = temp_path / "input.png"
+                output_path = temp_path / "annotated.png"
+                metadata_path = temp_path / "detections.json"
+                road_image.convert("RGB").save(input_path, format="PNG")
 
-            import torch
+                yolo_worker = r"""
+import json, os, sys, traceback
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-            torch.set_num_threads(1)
-            damage_model = load_damage_model()
+input_path, weights_path, output_path, metadata_path, confidence = sys.argv[1:6]
+try:
+    import torch
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass
+    from ultralytics import YOLO
+    from PIL import Image
 
-            st.info("Running road-damage detection on CPU...")
+    model = YOLO(weights_path)
+    results = model.predict(
+        source=input_path,
+        conf=float(confidence),
+        device="cpu",
+        imgsz=640,
+        batch=1,
+        half=False,
+        workers=0,
+        verbose=False,
+    )
+    result = results[0]
+    annotated_rgb = result.plot()[..., ::-1].copy()
+    Image.fromarray(annotated_rgb).save(output_path)
 
-            with st.spinner("Analyzing image..."):
-                results = damage_model(
-                    source=road_image,
-                    conf=float(confidence),
-                    device="cpu",
-                    imgsz=320,
-                    verbose=False,
-                )
-
-            result = results[0]
-            annotated_rgb = result.plot()[..., ::-1].copy()
-
-            st.subheader("Detection Results")
-            st.image(
-                annotated_rgb,
-                caption="Road-damage detections",
-                width="stretch",
-            )
-
-            boxes = result.boxes
-
-            if boxes is None or len(boxes) == 0:
-                st.info(
-                    "No damage was detected at this confidence threshold. "
-                    "This does not guarantee that the road has no damage."
-                )
+    names = model.names
+    detections = []
+    boxes = result.boxes
+    if boxes is not None:
+        for box in boxes:
+            class_id = int(box.cls[0].item())
+            score = float(box.conf[0].item())
+            if isinstance(names, dict):
+                class_name = names.get(class_id, str(class_id))
             else:
-                st.success(
-                    f"Detected {len(boxes)} possible road-damage instance(s)."
-                )
+                class_name = names[class_id] if class_id < len(names) else str(class_id)
+            detections.append({"class": str(class_name), "confidence": score})
 
-                rows = []
-                class_names = damage_model.names
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump({"detections": detections}, f)
+except Exception:
+    traceback.print_exc()
+    sys.exit(2)
+"""
+                st.info("Starting road-damage detector in an isolated CPU process...")
+                with st.spinner("Analyzing image at 640 × 640 inference size..."):
+                    completed = subprocess.run(
+                        [
+                            sys.executable,
+                            "-c",
+                            yolo_worker,
+                            str(input_path),
+                            str(DAMAGE_MODEL_PATH),
+                            str(output_path),
+                            str(metadata_path),
+                            str(float(confidence)),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=240,
+                        env={
+                            **os.environ,
+                            "CUDA_VISIBLE_DEVICES": "-1",
+                            "OMP_NUM_THREADS": "1",
+                            "OPENBLAS_NUM_THREADS": "1",
+                            "MKL_NUM_THREADS": "1",
+                            "NUMEXPR_NUM_THREADS": "1",
+                        },
+                    )
 
-                for box in boxes:
-                    class_id = int(box.cls[0].item())
-                    score = float(box.conf[0].item())
+                if completed.returncode != 0:
+                    st.error(
+                        "The road-damage worker failed, but the main app was protected "
+                        "from the worker process crash."
+                    )
+                    if completed.returncode < 0:
+                        st.warning(
+                            f"The worker terminated with signal {-completed.returncode}. "
+                            "This indicates a native-library crash rather than a normal Python exception."
+                        )
+                    details = completed.stderr or completed.stdout or "No diagnostic output returned."
+                    st.code(details[-7000:])
+                elif not output_path.is_file() or not metadata_path.is_file():
+                    st.error("The detector finished without producing its output files.")
+                    st.code((completed.stderr or "No diagnostic output returned.")[-7000:])
+                else:
+                    st.subheader("Detection Results")
+                    st.image(
+                        str(output_path),
+                        caption="Road-damage detections",
+                        width="stretch",
+                    )
+                    with metadata_path.open("r", encoding="utf-8") as f:
+                        detections = json.load(f).get("detections", [])
 
-                    if isinstance(class_names, dict):
-                        class_name = class_names.get(class_id, str(class_id))
+                    if not detections:
+                        st.info(
+                            "No damage was detected at this confidence threshold. "
+                            "This does not guarantee that the road has no damage."
+                        )
                     else:
-                        class_name = (
-                            class_names[class_id]
-                            if class_id < len(class_names)
-                            else str(class_id)
+                        st.success(f"Detected {len(detections)} possible road-damage instance(s).")
+                        st.dataframe(
+                            pd.DataFrame([
+                                {
+                                    "Detected class": item["class"],
+                                    "Confidence": f"{float(item['confidence']):.1%}",
+                                }
+                                for item in detections
+                            ]),
+                            width="stretch",
+                            hide_index=True,
                         )
 
-                    rows.append({
-                        "Detected class": class_name,
-                        "Confidence": f"{score:.1%}",
-                    })
+                    st.caption(
+                        "Detection confidence is not the probability of an accident. "
+                        "Image detection does not directly calculate the accident-risk score."
+                    )
 
-                st.dataframe(
-                    pd.DataFrame(rows),
-                    width="stretch",
-                    hide_index=True,
-                )
-
-            st.caption(
-                "Detection confidence is not the probability of an accident. "
-                "Image detection does not directly calculate the accident-risk score."
-            )
-
+        except subprocess.TimeoutExpired:
+            st.error("Road-damage detection exceeded the 240-second time limit.")
         except Exception as exc:
-            st.error("Road-damage detection failed.")
-            st.code(f"{type(exc).__name__}: {exc}")
-
+            st.error("Road-damage detection could not be completed.")
+            st.exception(exc)
 
 # ---------------------------------------------------------------------
 # Footer

@@ -3,11 +3,11 @@ tensorflow==2.21.0
 pandas
 numpy
 scikit-learn==1.6.1
-joblib 
-shap 
+joblib
+shap
 matplotlib
 dill
-opencv-python-headless
+Pillow
 ultralytics-opencv-headless==8.4.175
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.6.0+cpu

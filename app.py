@@ -39,15 +39,16 @@ PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
 DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
 
 
+
 @st.cache_resource
 def load_damage_model():
-   """Load the YOLO road-damage detector once per Streamlit session."""
-  if not DAMAGE_MODEL_PATH.exists():
-     raise FileNotFoundError(
-        f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
-       "Place best.pt inside the project's models folder."
-     )
-  return YOLO(str(DAMAGE_MODEL_PATH))
+    """Load the YOLO road-damage detector once per Streamlit session."""
+    if not DAMAGE_MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Road-damage model not found: {DAMAGE_MODEL_PATH}. "
+            "Place best.pt inside the project's models folder."
+        )
+    return YOLO(str(DAMAGE_MODEL_PATH))
 
 
 # ============================================================

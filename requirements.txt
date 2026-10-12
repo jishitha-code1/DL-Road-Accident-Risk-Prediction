@@ -7,5 +7,4 @@ joblib
 shap
 matplotlib
 dill
-ultralytics
-opencv-python-headless
+ultralytics-opencv-headless

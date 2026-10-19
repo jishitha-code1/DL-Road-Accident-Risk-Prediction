@@ -94,3 +94,66 @@ st.markdown(
     .info-card, .summary-card, .result-card {
         background: #F7FBFD; border: 1px solid #D3E2EA;
         border-radius: 16px; padding: 20px; margin-bottom: 20px;
+        box-shadow: 0 5px 16px rgba(30,70,100,.08);
+        color: #173F68;
+    }
+    .result-card { text-align: center; padding: 34px 20px; }
+    .result-title { font-size: 19px; color: #315878; font-weight: 700; }
+    .score { font-size: 46px; font-weight: 800; color: #173F68; margin: 8px 0 16px; }
+    .low-risk, .medium-risk, .high-risk {
+        display: inline-block; padding: 9px 24px; border-radius: 24px;
+        font-size: 16px; font-weight: 750;
+    }
+    .low-risk { background: #D8F5E5; color: #16824A; }
+    .medium-risk { background: #FFF1C9; color: #946200; }
+    .high-risk { background: #FFE0E0; color: #C62828; }
+    div.stButton > button {
+        width: 100%; min-height: 50px; background: #EED9C4;
+        color: #173F68; border: 1px solid #F09AAA;
+        border-radius: 12px; font-weight: 700;
+    }
+    div.stButton > button:hover { background: #F4B0C0; color: #173F68; }
+    [data-baseweb="select"] > div, [data-baseweb="input"] > div {
+        background-color: #F8FAFC;
+    }
+    .footer-text { text-align: center; color: #315878; margin-top: 32px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ---------------------------------------------------------------------
+# Model loading: imports are delayed until required, and resources cached.
+# ---------------------------------------------------------------------
+@st.cache_resource(show_spinner="Loading the trained risk model...")
+def load_risk_model():
+    import tensorflow as tf
+
+    # Limit TensorFlow thread pools to reduce resource pressure in hosted apps.
+    try:
+        tf.config.threading.set_intra_op_parallelism_threads(1)
+        tf.config.threading.set_inter_op_parallelism_threads(1)
+    except RuntimeError:
+        # TensorFlow may already have initialized its runtime.
+        pass
+
+    if not MODEL_PATH.is_file():
+        raise FileNotFoundError(
+            f"Risk model not found: {MODEL_PATH}. "
+            "Check that the filename and models folder match your repository."
+        )
+    if not PREPROCESSOR_PATH.is_file():
+        raise FileNotFoundError(
+            f"Preprocessor not found: {PREPROCESSOR_PATH}. "
+            "Check that preprocessor.pkl is inside models/."
+        )
+
+    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+    preprocessor = joblib.load(PREPROCESSOR_PATH)
+
+    model_shape = model.input_shape
+    if isinstance(model_shape, list):
+        if len(model_shape) != 1:
+            raise ValueError(f"Multiple model inputs are not supported: {model_shape}")
+        model_shape = model_shape[0]

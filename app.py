@@ -1,109 +1,96 @@
-                    m1, m2, m3, m4 = st.columns(4)
-                    m1.metric("Weather", inferred_weather.title())
-                    m2.metric("Traffic", inferred_traffic.title())
-                    m3.metric("Visibility", inferred_visibility.title())
-                    m4.metric("Potholes", pothole_count)
+import os
 
-                    if vehicle_counts:
-                        st.write("Vehicle counts:", vehicle_counts)
-                    st.caption(
-                        "Weather estimate: "
-                        f"{analysis.get('weather_label', 'unknown')} "
-                        f"(classifier confidence {analysis.get('weather_confidence', 0.0):.1%}). "
-                        "A single image can misclassify weather and only shows visible vehicles."
-                    )
+# Set limits BEFORE importing TensorFlow, NumPy, or other numerical libraries.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "1")
+os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
 
-                    # Use the existing trained risk model with inferred image features.
-                    # Current time is used because time cannot reliably be inferred from a still image.
-                    inference_time = datetime.now().time().replace(second=0, microsecond=0)
-                    image_processed_input = preprocess_input(
-                        weather=inferred_weather,
-                        visibility=inferred_visibility,
-                        traffic_density=inferred_traffic,
-                        selected_time=inference_time,
-                        is_peak_hour=calculate_peak_hour(inference_time.hour),
-                        preprocessor=preprocessor,
-                        expected_features=EXPECTED_FEATURES,
-                    )
-                    base_score = predict_risk(model, image_processed_input)
+from datetime import datetime, time
+from pathlib import Path
+import json
+import subprocess
+import sys
+import tempfile
+import warnings
 
-                    # Potholes were not a trained input feature, so incorporate them as
-                    # a transparent experimental adjustment rather than pretending the
-                    # DNN learned their effect. Must be validated before scientific use.
-                    pothole_adjustment = (
-                        0.0 if pothole_count == 0
-                        else min(0.25, 0.10 + 0.04 * (pothole_count - 1))
-                    )
-                    combined_score = float(np.clip(
-                        base_score + pothole_adjustment * (1.0 - base_score), 0.0, 1.0
-                    ))
-                    combined_category = get_risk_category(combined_score)
-                    category_class = {
-                        "Low Risk": "low-risk",
-                        "Medium Risk": "medium-risk",
-                        "High Risk": "high-risk",
-                    }[combined_category]
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import streamlit as st
+from PIL import Image
 
-                    st.markdown("### Combined accident-risk estimate")
-                    st.markdown(
-                        f'<div class="result-card"><div class="result-title">'
-                        f'Image-Based Combined Risk Score</div>'
-                        f'<div class="score">{combined_score:.4f}</div>'
-                        f'<div class="{category_class}">{combined_category}</div></div>',
-                        unsafe_allow_html=True,
-                    )
-                    s1, s2, s3 = st.columns(3)
-                    s1.metric("DNN score from inferred conditions", f"{base_score:.4f}")
-                    s2.metric("Pothole adjustment", f"+{pothole_adjustment:.3f}")
-                    s3.metric("Vehicles counted", vehicle_total)
-
-                    st.markdown("### Why this risk was estimated")
-                    explanations = []
-                    if pothole_count:
-                        explanations.append(
-                            f"**Potholes:** {pothole_count} possible pothole(s) were detected, "
-                            "which may require drivers to brake or change direction."
-                        )
-                    else:
-                        explanations.append(
-                            "**Potholes:** no potholes were detected at the current detector threshold; "
-                            "this does not prove the road is damage-free."
-                        )
-                    explanations.append(
-                        f"**Weather:** the image classifier estimated **{inferred_weather}** conditions. "
-                        "Rain or fog may reduce traction or visibility."
-                    )
-                    explanations.append(
-                        f"**Traffic:** {vehicle_total} car/bus/truck/motorcycle instance(s) were visible, "
-                        f"mapped to **{inferred_traffic}** traffic density for this estimate."
-                    )
-                    explanations.append(
-                        f"**Time:** the model used the current time ({inference_time.strftime('%H:%M')}) "
-                        "because a single road image cannot reliably reveal the time of day."
-                    )
-                    for explanation in explanations:
-                        st.markdown(f"- {explanation}")
-
-                    st.warning(
-                        "Important research limitation: your existing DNN was trained on structured "
-                        "conditions, not raw images, and pothole count is not one of its trained inputs. "
-                        "The displayed combined score adds a hand-designed pothole adjustment; it is "
-                        "not a calibrated probability. Validate this method against labelled data before "
-                        "reporting it as an accurate accident-risk predictor."
-                    )
-
-        except subprocess.TimeoutExpired:
-            st.error("Image analysis exceeded the 10-minute limit. First-time model downloads may be the cause.")
-        except Exception as exc:
-            st.error("Image-based risk prediction could not be completed.")
-            st.exception(exc)
+warnings.filterwarnings("ignore", category=UserWarning, module="keras")
 
 
 # ---------------------------------------------------------------------
-# Footer
+# Streamlit configuration
+# ---------------------------------------------------------------------
+st.set_page_config(
+    page_title="Road Accident Risk Prediction",
+    page_icon="🚦",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "models"
+MODEL_PATH = MODEL_DIR / "improved_model (3).keras"
+PREPROCESSOR_PATH = MODEL_DIR / "preprocessor.pkl"
+DAMAGE_MODEL_PATH = MODEL_DIR / "best.pt"
+
+# These are the five raw columns in the exact order used for preprocessing.
+MODEL_FEATURES = [
+    "visibility",
+    "traffic_density",
+    "is_peak_hour",
+    "weather",
+    "hour",
+]
+
+BEST_MODEL_NAME = "Deep Learning DNN (5 input features)"
+BEST_MODEL_PARAMETERS = 1057
+BEST_MODEL_MAE = 0.0504
+BEST_MODEL_RMSE = 0.0720
+BEST_MODEL_R2 = 0.8884
+
+
+# ---------------------------------------------------------------------
+# Styling
 # ---------------------------------------------------------------------
 st.markdown(
-    '<div class="footer-text">DL-Based Road Accident Risk Prediction | '
-    'Deep Learning + Explainable AI</div>',
-    unsafe_allow_html=True,
-)
+    """
+    <style>
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        background-color: #ADD8E6;
+    }
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div,
+    [data-testid="stSidebarContent"] {
+        background-color: #EED9C4 !important;
+    }
+    .main .block-container {
+        max-width: 1200px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+    h1, h2, h3, h4, p, label { color: #173F68; }
+    .main-title {
+        font-size: 38px; font-weight: 800; color: #173F68;
+        text-align: center; margin: 10px 0 8px;
+    }
+    .main-subtitle {
+        font-size: 17px; color: #315878; text-align: center;
+        margin-bottom: 28px;
+    }
+    .section-title {
+        font-size: 27px; font-weight: 800; color: #173F68;
+        margin-top: 25px; margin-bottom: 18px;
+    }
+    .info-card, .summary-card, .result-card {
+        background: #F7FBFD; border: 1px solid #D3E2EA;
+        border-radius: 16px; padding: 20px; margin-bottom: 20px;
